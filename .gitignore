@@ -12,13 +12,67 @@ node_modules
 # Logs
 logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
-# Misc
+# 编辑器和IDE相关文件
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+*.ipr
+*.iws
+.fleet/
+
+# 操作系统生成文件
 .DS_Store
-.fleet
-.idea
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Local env files
+# 本地环境文件
 .env
 .env.*
 !.env.example
+*.local
+
+# 构建和打包相关
+build/
+*.tgz
+
+# 测试相关
+coverage/
+.nyc_output/
+
+# TypeScript相关
+*.tsbuildinfo
+*.tsbuildinfo.*
+
+# 依赖缓存
+.pnpm-store/
+.npm/
+.yarn/
+.yarn-cache/
+
+# 性能分析和调试
+*.heapsnapshot
+*.log
+*.cpuprofile
+
+# 临时文件
+tmp/
+temp/
+
+# 其他
+.vercel
+.netlify
+.cache/
+.parcel-cache/
+.next
+.svelte-kit
