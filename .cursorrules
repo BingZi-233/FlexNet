@@ -116,7 +116,7 @@ module.exports = {
 
 ```vue
 <template>
-  <a-space direction="vertical" size="large">
+  <a-space direction="vertical" :size="24">
     <a-button type="primary" class="hover:opacity-90">
       {{ $t('common.submit') }}
     </a-button>

@@ -56,4 +56,23 @@ html, body {
   filter: blur(8px);
   transform: scale(1.05);
 }
+
+/* 全局按钮圆角设置 */
+:root {
+  --border-radius-medium: 8px;
+}
+
+.arco-btn {
+  border-radius: 8px !important;
+}
+
+/* 保持圆形按钮的圆形 */
+.arco-btn-shape-circle {
+  border-radius: 50% !important;
+}
+
+/* 保持圆角按钮的圆角 */
+.arco-btn-shape-round {
+  border-radius: 999px !important;
+}
 </style>

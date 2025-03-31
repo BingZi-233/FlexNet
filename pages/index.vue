@@ -2,7 +2,7 @@
   <div class="py-12 md:py-20 px-4">
     <div class="max-w-5xl mx-auto">
       <!-- 主标题区域 -->
-      <a-space direction="vertical" size="large" align="center" class="w-full">
+      <a-space direction="vertical" :size="24" align="center" class="w-full">
         <div class="max-w-3xl mx-auto w-full text-center">
           <div class="mb-2 text-secondary font-medium tracking-wide">快速、安全、可靠</div>
           <a-typography-title :heading="1" class="text-2xl sm:text-3xl md:text-5xl font-bold !leading-tight">
