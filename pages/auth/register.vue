@@ -28,7 +28,7 @@
                 { maxLength: 20, message: '用户名最多20个字符' }
               ]">
               <a-input v-model="form.username" placeholder="请输入用户名" 
-                allow-clear :max-length="20" size="large">
+                allow-clear :max-length="20" size="medium">
                 <template #prefix>
                   <icon-user />
                 </template>
@@ -42,7 +42,7 @@
                 { type: 'email', message: '请输入有效的邮箱地址' }
               ]">
               <a-input v-model="form.email" placeholder="请输入邮箱" 
-                allow-clear :max-length="50" size="large">
+                allow-clear :max-length="50" size="medium">
                 <template #prefix>
                   <icon-email />
                 </template>
@@ -56,7 +56,7 @@
                 { minLength: 6, message: '密码至少6个字符' }
               ]">
               <a-input-password v-model="form.password" placeholder="请输入密码" 
-                allow-clear :max-length="20" size="large">
+                allow-clear :max-length="20" size="medium">
                 <template #prefix>
                   <icon-lock />
                 </template>
@@ -70,7 +70,7 @@
                 { validator: validateConfirmPassword, message: '两次输入的密码不一致' }
               ]">
               <a-input-password v-model="form.confirmPassword" placeholder="请确认密码" 
-                allow-clear :max-length="20" size="large">
+                allow-clear :max-length="20" size="medium">
                 <template #prefix>
                   <icon-lock />
                 </template>
@@ -89,7 +89,7 @@
             </a-form-item>
             
             <!-- 注册按钮 -->
-            <a-button type="primary" html-type="submit" long size="large" 
+            <a-button type="primary" html-type="submit" long size="medium" 
               class="hover:opacity-90 transition-opacity">
               注册
             </a-button>
@@ -98,13 +98,13 @@
             <div class="mt-6 pt-4 border-t border-gray-100">
               <p class="text-center text-gray-500 text-sm mb-4">- 使用其他方式注册 -</p>
               <div class="flex justify-center gap-4">
-                <a-button shape="circle" size="large" class="bg-gray-800 hover:bg-gray-700 text-white border-none" @click="handleGithubRegister">
+                <a-button shape="circle" size="medium" class="bg-gray-800 hover:bg-gray-700 text-white border-none" @click="handleGithubRegister">
                   <template #icon><icon-github /></template>
                 </a-button>
-                <a-button shape="circle" size="large" class="bg-red-500 hover:bg-red-600 text-white border-none">
+                <a-button shape="circle" size="medium" class="bg-red-500 hover:bg-red-600 text-white border-none" @click="handleGoogleRegister">
                   <template #icon><icon-google /></template>
                 </a-button>
-                <a-button shape="circle" size="large" class="bg-green-500 hover:bg-green-600 text-white border-none">
+                <a-button shape="circle" size="medium" class="bg-green-500 hover:bg-green-600 text-white border-none">
                   <template #icon><icon-wechat /></template>
                 </a-button>
               </div>
@@ -127,7 +127,6 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { Message } from '@arco-design/web-vue';
-import { OAuthProvider } from 'appwrite';
 
 // 设置页面元数据
 definePageMeta({
@@ -148,7 +147,7 @@ const loading = ref(false);
 const error = ref('');
 
 // 使用 Appwrite 账户服务
-const appwriteAccount = useAppwriteAccount();
+const { createAccount, loginWithEmail, loginWithGithub, loginWithGoogle } = useAppwriteAccount();
 const router = useRouter();
 
 // 验证确认密码
@@ -165,14 +164,14 @@ const handleSubmit = async () => {
   
   try {
     // 创建新用户账号
-    await appwriteAccount.createAccount(form.email, form.password, form.username);
+    await createAccount(form.email, form.password, form.username);
     
     // 注册成功
     Message.success('注册成功！请登录您的账号。');
     
     // 尝试自动登录
     try {
-      await appwriteAccount.loginWithEmail(form.email, form.password);
+      await loginWithEmail(form.email, form.password);
       // 登录成功，跳转到首页
       router.push('/');
     } catch (loginErr) {
@@ -195,10 +194,24 @@ const handleGithubRegister = () => {
     const successUrl = `${window.location.origin}/auth/callback`;
     const failureUrl = `${window.location.origin}/auth/register`;
     
-    appwriteAccount.loginWithOAuth(OAuthProvider.Github, successUrl, failureUrl);
+    loginWithGithub(successUrl, failureUrl);
   } catch (err) {
     console.error('GitHub注册失败:', err);
     Message.error('GitHub注册失败，请稍后再试。');
+  }
+};
+
+// Google注册
+const handleGoogleRegister = () => {
+  try {
+    // 设置回调URL
+    const successUrl = `${window.location.origin}/auth/callback`;
+    const failureUrl = `${window.location.origin}/auth/register`;
+    
+    loginWithGoogle(successUrl, failureUrl);
+  } catch (err) {
+    console.error('Google注册失败:', err);
+    Message.error('Google注册失败，请稍后再试。');
   }
 };
 </script>

@@ -1,181 +1,162 @@
+import type { Models } from 'appwrite';
+
 /**
- * Appwrite 头像服务 Composable
- * 提供用户头像、图标和图片生成相关功能
+ * useAppwriteAvatar composable
+ * 
+ * 提供Appwrite头像服务的封装，方便在应用中生成用户头像
  */
 export const useAppwriteAvatar = () => {
-  // 获取 Nuxt 应用实例以访问插件提供的服务
-  const nuxtApp = useNuxtApp();
-  const { $appwrite } = nuxtApp;
-  
-  // 如果插件未正确加载，显示错误
-  if (!$appwrite) {
-    console.error('Appwrite 插件未正确加载');
-    throw new Error('Appwrite 插件未正确加载');
-  }
-  
-  // 初始化头像服务
-  // 由于类型定义问题，直接访问使用 any 类型绕过 TypeScript 检查
-  const avatars = ($appwrite as any).avatars;
+  // 使用Nuxt的useNuxtApp访问通过插件注册的Appwrite实例
+  const { $appwrite } = useNuxtApp();
   
   /**
-   * 获取自定义图片
-   * @param url 图片URL
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
-   * @returns 处理后的图片URL
-   */
-  const getImage = (url: string, width?: number, height?: number) => {
-    try {
-      return avatars?.getImage ? avatars.getImage(url, width, height) : null;
-    } catch (error) {
-      console.error('获取图片失败', error);
-      return null;
-    }
-  };
-  
-  /**
-   * 获取网站favicon图标
-   * @param url 网站URL
-   * @returns favicon URL
-   */
-  const getFavicon = (url: string) => {
-    try {
-      return avatars?.getFavicon ? avatars.getFavicon(url) : null;
-    } catch (error) {
-      console.error('获取favicon失败', error);
-      return null;
-    }
-  };
-  
-  /**
-   * 获取用户首字母头像
-   * @param name 用户名称（可选）
+   * 获取基于用户名首字母的头像URL
+   * @param name 用于生成头像的名称
    * @param width 宽度（可选）
    * @param height 高度（可选）
    * @param background 背景颜色（可选）
-   * @returns 头像URL
    */
-  const getInitialsAvatar = (name?: string, width?: number, height?: number, background?: string) => {
-    try {
-      return avatars?.getInitials ? avatars.getInitials(name, width, height, background) : null;
-    } catch (error) {
-      console.error('获取首字母头像失败', error);
-      return null;
+  const getInitialsAvatar = (
+    name: string = 'Anonymous',
+    width: number = 80,
+    height: number = 80,
+    background?: string
+  ): string => {
+    let url = $appwrite.avatars.getInitials(name);
+    
+    // 添加宽度和高度参数
+    url += `?width=${width}&height=${height}`;
+    
+    // 如果指定了背景颜色，添加到URL
+    if (background) {
+      url += `&background=${encodeURIComponent(background)}`;
     }
+    
+    return url;
   };
   
   /**
-   * 获取基于电子邮件的Gravatar头像
-   * @param email 电子邮件
-   * @param size 大小（可选）
-   * @returns 头像URL
+   * 获取Gravatar头像URL
+   * @param email 用户邮箱
+   * @param size 尺寸（可选）
    */
-  const getGravatarImage = (email: string, size?: number) => {
-    try {
-      return avatars?.getImage ? avatars.getImage('gravatar', email, size) : null;
-    } catch (error) {
-      console.error('获取Gravatar头像失败', error);
-      return null;
-    }
-  };
-  
-  /**
-   * 生成随机头像
-   * @param code 唯一标识符
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
-   * @returns 头像URL
-   */
-  const getRandomAvatar = (code: string, width?: number, height?: number) => {
-    try {
-      // 可以选择不同的头像类型：adventurer, adventurer-neutral, avataaars, big-ears, big-ears-neutral, 
-      // big-smile, bottts, croodles, croodles-neutral, identicon, initials, micah, miniavs, 
-      // notionists, open-peeps, personas, pixel-art, pixel-art-neutral
-      return avatars?.getImage ? avatars.getImage('initials', code, width, height) : null;
-    } catch (error) {
-      console.error('获取随机头像失败', error);
-      return null;
-    }
+  const getGravatarImage = (
+    email: string,
+    size: number = 80
+  ): string => {
+    return $appwrite.avatars.getGravatar(email, size);
   };
   
   /**
    * 获取国旗图标
-   * @param code 国家代码
+   * @param countryCode 国家代码（两个字母的ISO 3166-1代码）
    * @param width 宽度（可选）
    * @param height 高度（可选）
-   * @param quality 图片质量（可选）
-   * @returns 国旗URL
    */
-  const getCountryFlag = (code: string, width?: number, height?: number, quality?: number) => {
-    try {
-      return avatars?.getFlag ? avatars.getFlag(code, width, height, quality) : null;
-    } catch (error) {
-      console.error('获取国旗图标失败', error);
-      return null;
-    }
+  const getCountryFlag = (
+    countryCode: string,
+    width: number = 100,
+    height: number = 75
+  ): string => {
+    let url = $appwrite.avatars.getFlag(countryCode);
+    
+    // 添加宽度和高度参数
+    url += `?width=${width}&height=${height}`;
+    
+    return url;
   };
   
   /**
    * 获取浏览器图标
-   * @param code 浏览器代码
+   * @param browser 浏览器代码 (chrome, firefox, safari, edge 等)
    * @param width 宽度（可选）
    * @param height 高度（可选）
-   * @param quality 图片质量（可选）
-   * @returns 浏览器图标URL
    */
-  const getBrowserIcon = (code: string, width?: number, height?: number, quality?: number) => {
-    try {
-      return avatars?.getBrowser ? avatars.getBrowser(code, width, height, quality) : null;
-    } catch (error) {
-      console.error('获取浏览器图标失败', error);
-      return null;
-    }
+  const getBrowserIcon = (
+    browser: string,
+    width: number = 100,
+    height: number = 100
+  ): string => {
+    let url = $appwrite.avatars.getBrowser(browser);
+    
+    // 添加宽度和高度参数
+    url += `?width=${width}&height=${height}`;
+    
+    return url;
   };
   
   /**
    * 获取信用卡图标
-   * @param code 信用卡代码
+   * @param provider 信用卡提供商代码 (amex, argencard, cabal, censosud, diners, discover, elo, hipercard, jcb, mastercard, naranja, targeta-shopping, union-china, visa 等)
    * @param width 宽度（可选）
    * @param height 高度（可选）
-   * @param quality 图片质量（可选）
-   * @returns 信用卡图标URL
    */
-  const getCreditCardIcon = (code: string, width?: number, height?: number, quality?: number) => {
-    try {
-      return avatars?.getCreditCard ? avatars.getCreditCard(code, width, height, quality) : null;
-    } catch (error) {
-      console.error('获取信用卡图标失败', error);
-      return null;
-    }
+  const getCreditCardIcon = (
+    provider: string,
+    width: number = 100,
+    height: number = 100
+  ): string => {
+    let url = $appwrite.avatars.getCreditCard(provider);
+    
+    // 添加宽度和高度参数
+    url += `?width=${width}&height=${height}`;
+    
+    return url;
   };
   
   /**
-   * 获取二维码
-   * @param text 文本内容
-   * @param size 大小（可选）
+   * 获取二维码图片
+   * @param text 要编码为二维码的文本
+   * @param size 尺寸（可选）
    * @param margin 边距（可选）
-   * @param download 是否下载（可选）
-   * @returns 二维码URL
+   * @param download 是否添加下载头（可选）
    */
-  const getQRCode = (text: string, size?: number, margin?: number, download?: boolean) => {
-    try {
-      return avatars?.getQR ? avatars.getQR(text, size, margin, download) : null;
-    } catch (error) {
-      console.error('获取二维码失败', error);
-      return null;
+  const getQRCode = (
+    text: string,
+    size: number = 400,
+    margin: number = 1,
+    download: boolean = false
+  ): string => {
+    let url = $appwrite.avatars.getQR(text);
+    
+    // 添加参数
+    url += `?size=${size}&margin=${margin}`;
+    
+    if (download) {
+      url += '&download=1';
     }
+    
+    return url;
   };
   
-  // 返回所有可用的方法
+  /**
+   * 获取随机头像URL（使用DiceBear生成）
+   * @param style 头像样式，如 'avataaars', 'bottts', 'initials' 等
+   * @param seed 随机种子，用于生成一致的头像
+   * @param width 宽度（可选）
+   * @param height 高度（可选）
+   */
+  const getRandomAvatar = (
+    style: string = 'initials',
+    seed: string = 'avatar',
+    width: number = 80,
+    height: number = 80
+  ): string => {
+    let url = $appwrite.avatars.getImage(style, seed);
+    
+    // 添加宽度和高度参数
+    url += `?width=${width}&height=${height}`;
+    
+    return url;
+  };
+  
   return {
-    getImage,
-    getFavicon,
     getInitialsAvatar,
     getGravatarImage,
-    getRandomAvatar,
     getCountryFlag,
     getBrowserIcon,
     getCreditCardIcon,
-    getQRCode
+    getQRCode,
+    getRandomAvatar
   };
 }; 

@@ -1,31 +1,25 @@
-import { ID, OAuthProvider, AppwriteException } from 'appwrite';
+import { ID, Account, Client, OAuthProvider } from 'appwrite';
+import type { Models } from 'appwrite';
 
 /**
- * Appwrite 账户服务 Composable
- * 封装用户账户相关操作
+ * useAppwriteAccount composable
+ * 
+ * 提供Appwrite账户服务的封装，方便在应用中进行用户认证和账户管理
  */
 export const useAppwriteAccount = () => {
-  // 获取 Nuxt 应用实例以访问插件提供的服务
-  const nuxtApp = useNuxtApp();
-  const { $appwrite } = nuxtApp;
-  
-  // 如果插件未正确加载，显示错误
-  if (!$appwrite) {
-    console.error('Appwrite 插件未正确加载');
-    throw new Error('Appwrite 插件未正确加载');
-  }
-  
-  // 获取 account 实例
-  const account = $appwrite.account;
+  // 使用Nuxt的useNuxtApp访问通过插件注册的Appwrite实例
+  const { $appwrite, $appwriteServer } = useNuxtApp();
   
   /**
    * 获取当前登录用户信息
    */
-  const getCurrentUser = async () => {
+  const getCurrentUser = async (): Promise<Models.User<Models.Preferences> | null> => {
     try {
-      return await account.get();
+      // 尝试获取当前会话，如果有会话，获取并返回用户信息
+      return await $appwrite.account.get();
     } catch (error) {
-      console.error('获取当前用户信息失败', error);
+      // 如果出错（如未登录），返回null
+      console.error('获取当前用户信息出错:', error);
       return null;
     }
   };
@@ -33,136 +27,78 @@ export const useAppwriteAccount = () => {
   /**
    * 检查用户是否已登录
    */
-  const isLoggedIn = async () => {
+  const isLoggedIn = async (): Promise<boolean> => {
     try {
-      await account.get();
-      return true;
+      const user = await getCurrentUser();
+      return !!user;
     } catch (error) {
+      console.error('检查登录状态出错:', error);
       return false;
     }
   };
   
   /**
-   * 创建新用户（邮箱、密码注册）
+   * 创建新用户账户
+   * @param email 用户电子邮箱
+   * @param password 用户密码(8-256字符)
+   * @param name 用户名称(最多128字符)
+   * @param userId 自定义用户ID，如果不提供则自动生成
    */
-  const createAccount = async (email: string, password: string, name?: string) => {
-    try {
-      return await account.create(ID.unique(), email, password, name);
-    } catch (error) {
-      console.error('创建账户失败', error);
-      throw error;
-    }
+  const createAccount = async (
+    email: string, 
+    password: string, 
+    name?: string, 
+    userId: string = ID.unique()
+  ): Promise<Models.User<Models.Preferences>> => {
+    return await $appwrite.account.create(
+      userId,
+      email,
+      password,
+      name
+    );
   };
   
   /**
-   * 邮箱密码登录
+   * 使用邮箱和密码登录
    */
-  const loginWithEmail = async (email: string, password: string) => {
-    try {
-      return await account.createEmailPasswordSession(email, password);
-    } catch (error) {
-      console.error('邮箱登录失败', error);
-      throw error;
-    }
+  const loginWithEmail = async (email: string, password: string): Promise<Models.Session> => {
+    return await $appwrite.account.createEmailPasswordSession(email, password);
   };
   
   /**
-   * OAuth 登录
-   * @param provider OAuth 提供商
-   * @param successUrl 成功回调地址
-   * @param failureUrl 失败回调地址
+   * 使用OAuth提供商登录（如GitHub、Google等）
    */
-  const loginWithOAuth = (
-    provider: OAuthProvider,
-    successUrl?: string,
-    failureUrl?: string
-  ) => {
-    try {
-      return account.createOAuth2Session(
-        provider,
-        successUrl,
-        failureUrl
-      );
-    } catch (error) {
-      console.error('OAuth 登录失败', error);
-      throw error;
-    }
+  const loginWithOAuth = async (provider: string, successUrl?: string, failureUrl?: string): Promise<void> => {
+    // 将字符串provider转换为OAuthProvider枚举值
+    const oauthProvider = provider as unknown as OAuthProvider;
+    const success = successUrl || window.location.href;
+    const failure = failureUrl || window.location.href;
+    
+    await $appwrite.account.createOAuth2Session(oauthProvider, success, failure);
+  };
+
+  /**
+   * OAuth登录辅助方法 - GitHub
+   */
+  const loginWithGithub = async (successUrl?: string, failureUrl?: string): Promise<void> => {
+    await loginWithOAuth(OAuthProvider.Github, successUrl, failureUrl);
   };
   
   /**
-   * 退出登录（删除当前会话）
+   * OAuth登录辅助方法 - Google
    */
-  const logout = async () => {
-    try {
-      await account.deleteSession('current');
-      return true;
-    } catch (error) {
-      console.error('退出登录失败', error);
-      return false;
-    }
+  const loginWithGoogle = async (successUrl?: string, failureUrl?: string): Promise<void> => {
+    await loginWithOAuth(OAuthProvider.Google, successUrl, failureUrl);
   };
   
   /**
-   * 退出所有设备的登录（删除所有会话）
+   * 退出登录（销毁当前会话）
    */
-  const logoutAll = async () => {
+  const logout = async (): Promise<void> => {
     try {
-      await account.deleteSessions();
-      return true;
+      await $appwrite.account.deleteSession('current');
     } catch (error) {
-      console.error('退出所有登录失败', error);
-      return false;
-    }
-  };
-  
-  /**
-   * 发送密码重置邮件
-   */
-  const sendPasswordRecovery = async (email: string, url: string) => {
-    try {
-      return await account.createRecovery(email, url);
-    } catch (error) {
-      console.error('发送密码重置邮件失败', error);
-      throw error;
-    }
-  };
-  
-  /**
-   * 完成密码重置
-   */
-  const confirmPasswordRecovery = async (
-    userId: string,
-    secret: string,
-    password: string
-  ) => {
-    try {
-      return await account.updateRecovery(userId, secret, password);
-    } catch (error) {
-      console.error('密码重置失败', error);
-      throw error;
-    }
-  };
-  
-  /**
-   * 发送邮箱验证邮件
-   */
-  const sendVerificationEmail = async (url: string) => {
-    try {
-      return await account.createVerification(url);
-    } catch (error) {
-      console.error('发送验证邮件失败', error);
-      throw error;
-    }
-  };
-  
-  /**
-   * 确认邮箱验证
-   */
-  const confirmVerification = async (userId: string, secret: string) => {
-    try {
-      return await account.updateVerification(userId, secret);
-    } catch (error) {
-      console.error('邮箱验证失败', error);
+      console.error('退出登录出错:', error);
       throw error;
     }
   };
@@ -170,59 +106,57 @@ export const useAppwriteAccount = () => {
   /**
    * 更新用户名
    */
-  const updateName = async (name: string) => {
-    try {
-      return await account.updateName(name);
-    } catch (error) {
-      console.error('更新用户名失败', error);
-      throw error;
-    }
+  const updateName = async (name: string): Promise<Models.User<Models.Preferences>> => {
+    return await $appwrite.account.updateName(name);
   };
   
   /**
-   * 更新邮箱
+   * 更新用户密码
+   * @param newPassword 新密码，至少8个字符
+   * @param oldPassword 当前密码（对于通过OAuth、邀请或Magic URL创建的用户，此参数可选）
    */
-  const updateEmail = async (email: string, password: string) => {
-    try {
-      return await account.updateEmail(email, password);
-    } catch (error) {
-      console.error('更新邮箱失败', error);
-      throw error;
-    }
+  const updatePassword = async (newPassword: string, oldPassword?: string): Promise<Models.User<Models.Preferences>> => {
+    return await $appwrite.account.updatePassword(newPassword, oldPassword);
   };
   
   /**
-   * 更新密码
+   * 发送密码重置邮件
    */
-  const updatePassword = async (password: string, oldPassword: string) => {
-    try {
-      return await account.updatePassword(password, oldPassword);
-    } catch (error) {
-      console.error('更新密码失败', error);
-      throw error;
-    }
+  const resetPassword = async (email: string, redirectUrl?: string): Promise<void> => {
+    const url = redirectUrl || `${window.location.origin}/auth/reset-password`;
+    await $appwrite.account.createRecovery(email, url);
   };
   
   /**
-   * 获取会话列表
+   * 确认密码重置并设置新密码
    */
-  const getSessions = async () => {
-    try {
-      return await account.listSessions();
-    } catch (error) {
-      console.error('获取会话列表失败', error);
-      throw error;
-    }
+  const confirmPasswordReset = async (userId: string, secret: string, password: string): Promise<void> => {
+    await $appwrite.account.updateRecovery(userId, secret, password);
+  };
+  
+  /**
+   * 获取用户所有会话
+   */
+  const getSessions = async (): Promise<Models.SessionList> => {
+    return await $appwrite.account.listSessions();
+  };
+  
+  /**
+   * 删除指定会话
+   */
+  const deleteSession = async (sessionId: string): Promise<void> => {
+    await $appwrite.account.deleteSession(sessionId);
   };
   
   /**
    * 获取用户偏好设置
    */
-  const getPreferences = async () => {
+  const getPreferences = async (): Promise<Models.Preferences> => {
     try {
-      return await account.getPrefs();
+      const user = await getCurrentUser();
+      return user?.prefs || {};
     } catch (error) {
-      console.error('获取用户偏好设置失败', error);
+      console.error('获取用户偏好设置出错:', error);
       return {};
     }
   };
@@ -230,65 +164,118 @@ export const useAppwriteAccount = () => {
   /**
    * 更新用户偏好设置
    */
-  const updatePreferences = async (prefs: object) => {
-    try {
-      return await account.updatePrefs(prefs);
-    } catch (error) {
-      console.error('更新用户偏好设置失败', error);
-      throw error;
+  const updatePreferences = async (prefs: object): Promise<Models.User<Models.Preferences>> => {
+    return await $appwrite.account.updatePrefs(prefs);
+  };
+  
+  /**
+   * 发送验证邮件
+   */
+  const sendVerificationEmail = async (redirectUrl?: string): Promise<void> => {
+    const url = redirectUrl || `${window.location.origin}/auth/verify-email`;
+    await $appwrite.account.createVerification(url);
+  };
+  
+  /**
+   * 确认邮箱验证
+   * 
+   * 注意：该方法按文档返回类型应为void，但实际实现可能返回用户对象
+   */
+  const confirmVerification = async (userId: string, secret: string): Promise<void> => {
+    await $appwrite.account.updateVerification(userId, secret);
+  };
+  
+  /**
+   * 创建JWT令牌
+   * JWT有效期为15分钟，如果用户在此期间登出，令牌将失效
+   */
+  const createJWT = async (): Promise<Models.Jwt> => {
+    return await $appwrite.account.createJWT();
+  };
+  
+  /**
+   * 在服务端创建JWT令牌
+   * 注意：仅在服务端使用
+   */
+  const createServerJWT = async (): Promise<Models.Jwt> => {
+    // 确保只在服务端调用
+    if (process.server && $appwriteServer) {
+      try {
+        return await $appwriteServer.account.createJWT();
+      } catch (error) {
+        console.error('创建JWT出错:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('createServerJWT只能在服务端调用');
     }
   };
   
   /**
-   * 创建魔术链接（免密码登录）
+   * 创建魔术链接令牌（Magic URL）
+   * @param email 用户电子邮箱
+   * @param redirectUrl 认证成功后的重定向URL
+   * @returns 返回Token对象，包含userId和secret
    */
-  const createMagicURLToken = async (
-    email: string,
-    url: string
-  ) => {
-    try {
-      return await account.createMagicURLToken(ID.unique(), email, url);
-    } catch (error) {
-      console.error('创建魔术链接失败', error);
-      throw error;
-    }
+  const createMagicURLToken = async (email: string, redirectUrl?: string): Promise<Models.Token> => {
+    const url = redirectUrl || `${window.location.origin}/auth/callback`;
+    return await $appwrite.account.createMagicURLToken(ID.unique(), email, url);
   };
   
   /**
-   * 验证魔术链接
+   * 更新魔术链接会话（确认Magic URL认证）
+   * @param userId 用户ID
+   * @param secret 认证密钥
+   * @returns 返回Session对象
    */
-  const updateMagicURLSession = async (
-    userId: string,
-    secret: string
-  ) => {
-    try {
-      return await account.updateMagicURLSession(userId, secret);
-    } catch (error) {
-      console.error('验证魔术链接失败', error);
-      throw error;
-    }
+  const updateMagicURLSession = async (userId: string, secret: string): Promise<Models.Session> => {
+    return await $appwrite.account.updateMagicURLSession(userId, secret);
   };
 
-  // 返回所有可用的方法
+  /**
+   * 创建手机验证码令牌
+   * @param phone 手机号码，包含国际区号（如+86）
+   * @returns 返回Token对象，包含userId和secret
+   */
+  const createPhoneToken = async (phone: string): Promise<Models.Token> => {
+    return await $appwrite.account.createPhoneToken(ID.unique(), phone);
+  };
+  
+  /**
+   * 更新手机验证码会话（确认SMS认证）
+   * @param userId 用户ID
+   * @param secret 短信验证码
+   * @returns 返回Session对象
+   */
+  const updatePhoneSession = async (userId: string, secret: string): Promise<Models.Session> => {
+    return await $appwrite.account.updatePhoneSession(userId, secret);
+  };
+  
+  // 返回所有方法
   return {
     getCurrentUser,
     isLoggedIn,
     createAccount,
     loginWithEmail,
     loginWithOAuth,
+    loginWithGithub,
+    loginWithGoogle,
     logout,
-    logoutAll,
-    sendPasswordRecovery,
-    confirmPasswordRecovery,
-    sendVerificationEmail,
-    confirmVerification,
     updateName,
-    updateEmail,
     updatePassword,
+    resetPassword,
+    confirmPasswordReset,
     getSessions,
+    deleteSession,
     getPreferences,
     updatePreferences,
+    sendVerificationEmail,
+    confirmVerification,
+    createJWT,
+    createServerJWT,
     createMagicURLToken,
-    updateMagicURLSession
+    updateMagicURLSession,
+    createPhoneToken,
+    updatePhoneSession
   };
 }; 

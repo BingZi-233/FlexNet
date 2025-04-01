@@ -10,12 +10,6 @@
             </nuxt-link>
           </div>
           <div class="hidden sm:flex items-center space-x-4">
-            <nuxt-link to="/about">
-              <a-button type="text" class="hover:bg-gray-50 transition-colors">
-                <template #icon><IconInfo /></template>
-                关于我们
-              </a-button>
-            </nuxt-link>
             <nuxt-link to="/auth/login">
               <a-button type="text" class="hover:bg-gray-50 transition-colors">
                 <template #icon><IconUser /></template>
@@ -38,12 +32,6 @@
         <!-- 移动端菜单 -->
         <a-drawer v-model:visible="menuVisible" placement="right" :width="250" :footer="false" :mask-closable="true">
           <div class="flex flex-col space-y-4 p-4">
-            <nuxt-link to="/about">
-              <a-button type="text" long class="hover:bg-gray-50 transition-colors">
-                <template #icon><IconInfo /></template>
-                关于我们
-              </a-button>
-            </nuxt-link>
             <nuxt-link to="/auth/login">
               <a-button type="text" long class="hover:bg-gray-50 transition-colors">
                 <template #icon><IconUser /></template>
@@ -76,14 +64,18 @@
                 关于我们
               </a-button>
             </nuxt-link>
-            <a-button type="text" size="mini" class="text-gray-600 hover:text-blue-600 transition-colors">
-              <template #icon><IconPhone /></template>
-              联系我们
-            </a-button>
-            <a-button type="text" size="mini" class="text-gray-600 hover:text-blue-600 transition-colors">
-              <template #icon><IconFile /></template>
-              隐私政策
-            </a-button>
+            <nuxt-link to="/privacy">
+              <a-button type="text" size="mini" class="text-gray-600 hover:text-blue-600 transition-colors">
+                <template #icon><IconFile /></template>
+                隐私政策
+              </a-button>
+            </nuxt-link>
+            <nuxt-link to="/terms">
+              <a-button type="text" size="mini" class="text-gray-600 hover:text-blue-600 transition-colors">
+                <template #icon><IconBookmark /></template>
+                用户协议
+              </a-button>
+            </nuxt-link>
           </div>
         </div>
       </a-layout-footer>

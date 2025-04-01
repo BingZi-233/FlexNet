@@ -38,13 +38,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 私有配置（仅在服务器端可访问）
     appwriteApiKey: process.env.APPWRITE_API_KEY || '',
-    
     // 公共配置（客户端和服务器端都可访问）
     public: {
-      appwriteEndpoint: process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1',
-      appwriteProjectId: process.env.APPWRITE_PROJECT_ID || '',
-      appwriteDatabaseId: process.env.APPWRITE_DATABASE_ID || '',
-      appwriteStorageBucketId: process.env.APPWRITE_STORAGE_BUCKET_ID || ''
+      appwriteEndpoint: process.env.APPWRITE_ENDPOINT || '',
+      appwriteProjectId: process.env.APPWRITE_PROJECT_ID || ''
     }
   }
 })

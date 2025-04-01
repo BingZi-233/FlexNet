@@ -20,13 +20,16 @@
           
           <!-- 表单 -->
           <a-form :model="form" @submit="handleSubmit" layout="vertical">
-            <!-- 用户名/邮箱 -->
-            <a-form-item field="username" label="用户名/邮箱" 
-              :rules="[{ required: true, message: '请输入用户名或邮箱' }]">
-              <a-input v-model="form.username" placeholder="请输入用户名或邮箱" 
-                allow-clear :max-length="50" size="large">
+            <!-- 邮箱 -->
+            <a-form-item field="email" label="邮箱" 
+              :rules="[
+                { required: true, message: '请输入邮箱' },
+                { type: 'email', message: '请输入有效的邮箱地址' }
+              ]">
+              <a-input v-model="form.email" placeholder="请输入邮箱" 
+                allow-clear :max-length="50" size="medium">
                 <template #prefix>
-                  <icon-user />
+                  <icon-email />
                 </template>
               </a-input>
             </a-form-item>
@@ -35,7 +38,7 @@
             <a-form-item field="password" label="密码"
               :rules="[{ required: true, message: '请输入密码' }]">
               <a-input-password v-model="form.password" placeholder="请输入密码" 
-                allow-clear :max-length="20" size="large">
+                allow-clear :max-length="20" size="medium">
                 <template #prefix>
                   <icon-lock />
                 </template>
@@ -49,7 +52,7 @@
             </div>
             
             <!-- 登录按钮 -->
-            <a-button type="primary" html-type="submit" long size="large" 
+            <a-button type="primary" html-type="submit" long size="medium" 
               class="hover:opacity-90 transition-opacity">
               登录
             </a-button>
@@ -58,14 +61,41 @@
             <div class="mt-6 pt-4 border-t border-gray-100">
               <p class="text-center text-gray-500 text-sm mb-4">- 使用其他方式登录 -</p>
               <div class="flex justify-center gap-4">
-                <a-button shape="circle" size="large" class="bg-gray-800 hover:bg-gray-700 text-white border-none" @click="handleGithubLogin">
+                <a-button shape="circle" size="medium" class="bg-gray-800 hover:bg-gray-700 text-white border-none" @click="handleGithubLogin">
                   <template #icon><icon-github /></template>
                 </a-button>
-                <a-button shape="circle" size="large" class="bg-red-500 hover:bg-red-600 text-white border-none">
+                <a-button shape="circle" size="medium" class="bg-red-500 hover:bg-red-600 text-white border-none" @click="handleGoogleLogin">
                   <template #icon><icon-google /></template>
                 </a-button>
-                <a-button shape="circle" size="large" class="bg-green-500 hover:bg-green-600 text-white border-none">
+                <a-button shape="circle" size="medium" class="bg-green-500 hover:bg-green-600 text-white border-none">
                   <template #icon><icon-wechat /></template>
+                </a-button>
+              </div>
+            </div>
+
+            <!-- 魔术链接登录 -->
+            <div class="mt-6 pt-4 border-t border-gray-100">
+              <p class="text-center text-gray-500 text-sm mb-4">- 使用魔术链接登录 -</p>
+              <div class="flex flex-col">
+                <a-input 
+                  v-model="magicLinkEmail" 
+                  placeholder="请输入邮箱地址"
+                  allow-clear
+                  size="medium"
+                  class="mb-2"
+                >
+                  <template #prefix>
+                    <icon-email />
+                  </template>
+                </a-input>
+                <a-button 
+                  type="outline" 
+                  size="medium" 
+                  :loading="magicLinkLoading"
+                  @click="handleMagicLinkLogin"
+                  class="hover:opacity-90 transition-opacity"
+                >
+                  发送登录链接
                 </a-button>
               </div>
             </div>
@@ -87,7 +117,6 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { Message } from '@arco-design/web-vue';
-import { OAuthProvider } from 'appwrite';
 
 // 设置页面元数据
 definePageMeta({
@@ -96,7 +125,7 @@ definePageMeta({
 
 // 表单数据
 const form = reactive({
-  username: '',
+  email: '',
   password: '',
   rememberMe: false
 });
@@ -106,8 +135,12 @@ const loading = ref(false);
 const error = ref('');
 
 // 使用 Appwrite 账户服务
-const appwriteAccount = useAppwriteAccount();
+const { loginWithEmail, loginWithGithub, loginWithGoogle, createMagicURLToken } = useAppwriteAccount();
 const router = useRouter();
+
+// 魔术链接登录表单数据和状态
+const magicLinkEmail = ref('');
+const magicLinkLoading = ref(false);
 
 // 提交表单
 const handleSubmit = async () => {
@@ -118,14 +151,14 @@ const handleSubmit = async () => {
   
   try {
     // 使用邮箱密码登录
-    await appwriteAccount.loginWithEmail(form.username, form.password);
+    await loginWithEmail(form.email, form.password);
     // 登录成功
     Message.success('登录成功！');
     // 跳转到首页
     router.push('/');
   } catch (err) {
     console.error('登录过程出错:', err);
-    error.value = '用户名或密码错误，请重试。';
+    error.value = '邮箱或密码错误，请重试。';
     Message.error(error.value);
   } finally {
     loading.value = false;
@@ -139,10 +172,48 @@ const handleGithubLogin = () => {
     const successUrl = `${window.location.origin}/auth/callback`;
     const failureUrl = `${window.location.origin}/auth/login`;
     
-    appwriteAccount.loginWithOAuth(OAuthProvider.Github, successUrl, failureUrl);
+    loginWithGithub(successUrl, failureUrl);
   } catch (err) {
     console.error('GitHub登录失败:', err);
     Message.error('GitHub登录失败，请稍后再试。');
+  }
+};
+
+// Google登录
+const handleGoogleLogin = () => {
+  try {
+    // 设置回调URL
+    const successUrl = `${window.location.origin}/auth/callback`;
+    const failureUrl = `${window.location.origin}/auth/login`;
+    
+    loginWithGoogle(successUrl, failureUrl);
+  } catch (err) {
+    console.error('Google登录失败:', err);
+    Message.error('Google登录失败，请稍后再试。');
+  }
+};
+
+// 处理魔术链接登录
+const handleMagicLinkLogin = async () => {
+  // 验证邮箱
+  if (!magicLinkEmail.value || !magicLinkEmail.value.includes('@')) {
+    Message.error('请输入有效的邮箱地址');
+    return;
+  }
+  
+  magicLinkLoading.value = true;
+  try {
+    // 创建魔术链接令牌
+    await createMagicURLToken(magicLinkEmail.value);
+    
+    // 显示成功消息
+    Message.success('已发送登录链接到您的邮箱，请检查并点击链接登录');
+    magicLinkEmail.value = '';
+  } catch (err) {
+    console.error('魔术链接发送失败:', err);
+    Message.error('发送失败，请稍后再试');
+  } finally {
+    magicLinkLoading.value = false;
   }
 };
 </script>
