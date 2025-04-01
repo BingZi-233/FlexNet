@@ -135,14 +135,19 @@
                   <p class="text-gray-500 mb-4 text-center">
                     我们将发送一个登录链接到您的邮箱，点击链接即可登录
                   </p>
-                  <a-form layout="vertical">
-                    <a-form-item field="magicLinkEmail" label="邮箱地址"
+                  <a-form 
+                    ref="magicLinkFormRef" 
+                    :model="magicLinkForm" 
+                    layout="vertical"
+                    @submit="handleMagicLinkLogin"
+                  >
+                    <a-form-item field="email" label="邮箱地址"
                       :rules="[
                         { required: true, message: '请输入邮箱' },
                         { type: 'email', message: '请输入有效的邮箱地址' }
                       ]">
                       <a-input 
-                        v-model="magicLinkEmail" 
+                        v-model="magicLinkForm.email" 
                         placeholder="请输入邮箱地址"
                         allow-clear
                         size="medium"
@@ -154,10 +159,10 @@
                     </a-form-item>
                     <a-button 
                       type="primary" 
+                      html-type="submit"
                       long
                       size="medium" 
                       :loading="magicLinkLoading"
-                      @click="handleMagicLinkLogin"
                       class="hover:opacity-90 transition-opacity"
                     >
                       发送登录链接
@@ -220,6 +225,7 @@
 import { reactive, ref, onMounted } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import type { Models } from 'appwrite';
+import type { FormInstance } from '@arco-design/web-vue';
 
 // 设置页面元数据
 definePageMeta({
@@ -267,7 +273,10 @@ onMounted(async () => {
 });
 
 // 魔术链接登录表单数据和状态
-const magicLinkEmail = ref('');
+const magicLinkFormRef = ref<FormInstance>();
+const magicLinkForm = reactive({
+  email: ''
+});
 const magicLinkLoading = ref(false);
 
 // 提交表单
@@ -322,21 +331,29 @@ const handleGoogleLogin = () => {
 };
 
 // 处理魔术链接登录
-const handleMagicLinkLogin = async () => {
-  // 验证邮箱
-  if (!magicLinkEmail.value || !magicLinkEmail.value.includes('@')) {
-    Message.error('请输入有效的邮箱地址');
+const handleMagicLinkLogin = async (e?: Event) => {
+  e?.preventDefault();
+  
+  // 使用Arco Design表单验证
+  // 注: 这里使用FormInstance的validate方法进行表单验证，比简单的字符串检查更可靠
+  const { error, values } = await magicLinkFormRef.value?.validate() || { error: true, values: {} };
+  
+  if (error) {
+    // 表单验证失败时不处理，Arco Design会自动显示错误信息
     return;
   }
   
   magicLinkLoading.value = true;
   try {
     // 创建魔术链接令牌
-    await createMagicURLToken(magicLinkEmail.value);
+    await createMagicURLToken(values.email);
     
     // 显示成功消息
     Message.success('已发送登录链接到您的邮箱，请检查并点击链接登录');
-    magicLinkEmail.value = '';
+    magicLinkForm.email = ''; // 清空邮箱输入
+    
+    // 重置表单验证状态
+    magicLinkFormRef.value?.resetFields();
   } catch (err) {
     console.error('魔术链接发送失败:', err);
     Message.error('发送失败，请稍后再试');
