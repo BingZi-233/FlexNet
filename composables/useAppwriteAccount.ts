@@ -251,6 +251,33 @@ export const useAppwriteAccount = () => {
     return await $appwrite.account.updatePhoneSession(userId, secret);
   };
   
+  /**
+   * 获取用户的所有身份信息
+   * @returns 返回用户身份信息列表
+   */
+  const getIdentities = async (): Promise<Models.IdentityList> => {
+    try {
+      return await $appwrite.account.listIdentities();
+    } catch (error) {
+      console.error('获取用户身份信息出错:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 删除指定的身份认证
+   * @param identityId 要删除的身份ID
+   * @returns Promise<void>
+   */
+  const deleteIdentity = async (identityId: string): Promise<void> => {
+    try {
+      await $appwrite.account.deleteIdentity(identityId);
+    } catch (error) {
+      console.error('删除身份认证出错:', error);
+      throw error;
+    }
+  };
+  
   // 返回所有方法
   return {
     getCurrentUser,
@@ -276,6 +303,8 @@ export const useAppwriteAccount = () => {
     createMagicURLToken,
     updateMagicURLSession,
     createPhoneToken,
-    updatePhoneSession
+    updatePhoneSession,
+    getIdentities,
+    deleteIdentity
   };
 }; 

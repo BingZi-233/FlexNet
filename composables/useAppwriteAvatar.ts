@@ -1,4 +1,4 @@
-import type { Models } from 'appwrite';
+import { Browser, CreditCard, Flag } from 'appwrite';
 
 /**
  * useAppwriteAvatar composable
@@ -11,152 +11,182 @@ export const useAppwriteAvatar = () => {
   
   /**
    * 获取基于用户名首字母的头像URL
-   * @param name 用于生成头像的名称
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
+   * @param name 用于生成头像的名称（可选）
+   * @param width 宽度（可选，0-2000之间的整数）
+   * @param height 高度（可选，0-2000之间的整数）
    * @param background 背景颜色（可选）
+   * @returns 头像图片URL
    */
   const getInitialsAvatar = (
-    name: string = 'Anonymous',
-    width: number = 80,
-    height: number = 80,
+    name?: string,
+    width: number = 100,
+    height: number = 100,
     background?: string
   ): string => {
-    let url = $appwrite.avatars.getInitials(name);
+    // 验证宽度和高度的范围
+    width = Math.max(0, Math.min(2000, Math.floor(width)));
+    height = Math.max(0, Math.min(2000, Math.floor(height)));
     
-    // 添加宽度和高度参数
-    url += `?width=${width}&height=${height}`;
-    
-    // 如果指定了背景颜色，添加到URL
-    if (background) {
-      url += `&background=${encodeURIComponent(background)}`;
-    }
-    
-    return url;
-  };
-  
-  /**
-   * 获取Gravatar头像URL
-   * @param email 用户邮箱
-   * @param size 尺寸（可选）
-   */
-  const getGravatarImage = (
-    email: string,
-    size: number = 80
-  ): string => {
-    return $appwrite.avatars.getGravatar(email, size);
+    return $appwrite.avatars.getInitials(
+      name,
+      width,
+      height,
+      background
+    );
   };
   
   /**
    * 获取国旗图标
-   * @param countryCode 国家代码（两个字母的ISO 3166-1代码）
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
+   * @param code 国家代码（两个字母的ISO 3166-1代码），可使用Flag枚举或字符串
+   * @param width 宽度（可选，0-2000之间的整数）
+   * @param height 高度（可选，0-2000之间的整数）
+   * @param quality 图片质量（可选，0-100之间的整数）
+   * @returns 国旗图片URL
    */
-  const getCountryFlag = (
-    countryCode: string,
+  const getFlag = (
+    code: Flag | string,
     width: number = 100,
-    height: number = 75
+    height: number = 100,
+    quality: number = 100
   ): string => {
-    let url = $appwrite.avatars.getFlag(countryCode);
+    // 验证参数范围
+    width = Math.max(0, Math.min(2000, Math.floor(width)));
+    height = Math.max(0, Math.min(2000, Math.floor(height)));
+    quality = Math.max(0, Math.min(100, Math.floor(quality)));
     
-    // 添加宽度和高度参数
-    url += `?width=${width}&height=${height}`;
-    
-    return url;
+    return $appwrite.avatars.getFlag(
+      code as Flag,
+      width,
+      height,
+      quality
+    );
   };
   
   /**
    * 获取浏览器图标
-   * @param browser 浏览器代码 (chrome, firefox, safari, edge 等)
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
+   * @param code 浏览器代码，可使用Browser枚举或字符串
+   * @param width 宽度（可选，0-2000之间的整数）
+   * @param height 高度（可选，0-2000之间的整数）
+   * @param quality 图片质量（可选，0-100之间的整数）
+   * @returns 浏览器图标URL
    */
-  const getBrowserIcon = (
-    browser: string,
+  const getBrowser = (
+    code: Browser | string,
     width: number = 100,
-    height: number = 100
+    height: number = 100,
+    quality: number = 100
   ): string => {
-    let url = $appwrite.avatars.getBrowser(browser);
+    // 验证参数范围
+    width = Math.max(0, Math.min(2000, Math.floor(width)));
+    height = Math.max(0, Math.min(2000, Math.floor(height)));
+    quality = Math.max(0, Math.min(100, Math.floor(quality)));
     
-    // 添加宽度和高度参数
-    url += `?width=${width}&height=${height}`;
-    
-    return url;
+    return $appwrite.avatars.getBrowser(
+      code as Browser,
+      width,
+      height,
+      quality
+    );
   };
   
   /**
    * 获取信用卡图标
-   * @param provider 信用卡提供商代码 (amex, argencard, cabal, censosud, diners, discover, elo, hipercard, jcb, mastercard, naranja, targeta-shopping, union-china, visa 等)
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
+   * @param code 信用卡代码，可使用CreditCard枚举或字符串
+   * @param width 宽度（可选，0-2000之间的整数）
+   * @param height 高度（可选，0-2000之间的整数）
+   * @param quality 图片质量（可选，0-100之间的整数）
+   * @returns 信用卡图标URL
    */
-  const getCreditCardIcon = (
-    provider: string,
+  const getCreditCard = (
+    code: CreditCard | string,
     width: number = 100,
-    height: number = 100
+    height: number = 100,
+    quality: number = 100
   ): string => {
-    let url = $appwrite.avatars.getCreditCard(provider);
+    // 验证参数范围
+    width = Math.max(0, Math.min(2000, Math.floor(width)));
+    height = Math.max(0, Math.min(2000, Math.floor(height)));
+    quality = Math.max(0, Math.min(100, Math.floor(quality)));
     
-    // 添加宽度和高度参数
-    url += `?width=${width}&height=${height}`;
+    return $appwrite.avatars.getCreditCard(
+      code as CreditCard,
+      width,
+      height,
+      quality
+    );
+  };
+  
+  /**
+   * 获取网站favicon图标
+   * @param url 网站URL
+   * @returns favicon图标URL
+   */
+  const getFavicon = (url: string): string => {
+    return $appwrite.avatars.getFavicon(url);
+  };
+  
+  /**
+   * 获取远程图片并调整大小
+   * 此方法用于获取、裁剪和显示远程图片，确保使用TLS协议
+   * @param url 远程图片URL
+   * @param width 宽度（可选，0-2000之间的整数，默认为400）
+   * @param height 高度（可选，0-2000之间的整数，默认为400）
+   * @returns 处理后的图片URL
+   */
+  const getImage = (
+    url: string,
+    width: number = 400,
+    height: number = 400
+  ): string => {
+    // 验证宽度和高度的范围
+    width = Math.max(0, Math.min(2000, Math.floor(width)));
+    height = Math.max(0, Math.min(2000, Math.floor(height)));
     
-    return url;
+    return $appwrite.avatars.getImage(
+      url,
+      width,
+      height
+    );
   };
   
   /**
    * 获取二维码图片
    * @param text 要编码为二维码的文本
-   * @param size 尺寸（可选）
-   * @param margin 边距（可选）
-   * @param download 是否添加下载头（可选）
+   * @param size 尺寸（可选，1-1000之间的整数，默认为400）
+   * @param margin 边距（可选，0-10之间的整数，默认为1）
+   * @param download 是否添加下载头（可选，默认为false）
+   *                API实际接受0或1，但这里使用布尔值更符合TypeScript类型
+   * @returns 二维码图片URL
    */
-  const getQRCode = (
+  const getQR = (
     text: string,
     size: number = 400,
     margin: number = 1,
     download: boolean = false
   ): string => {
-    let url = $appwrite.avatars.getQR(text);
+    // 验证参数范围
+    size = Math.max(1, Math.min(1000, Math.floor(size)));
+    margin = Math.max(0, Math.min(10, Math.floor(margin)));
     
-    // 添加参数
-    url += `?size=${size}&margin=${margin}`;
-    
-    if (download) {
-      url += '&download=1';
-    }
-    
-    return url;
+    return $appwrite.avatars.getQR(
+      text,
+      size,
+      margin,
+      download
+    );
   };
   
-  /**
-   * 获取随机头像URL（使用DiceBear生成）
-   * @param style 头像样式，如 'avataaars', 'bottts', 'initials' 等
-   * @param seed 随机种子，用于生成一致的头像
-   * @param width 宽度（可选）
-   * @param height 高度（可选）
-   */
-  const getRandomAvatar = (
-    style: string = 'initials',
-    seed: string = 'avatar',
-    width: number = 80,
-    height: number = 80
-  ): string => {
-    let url = $appwrite.avatars.getImage(style, seed);
-    
-    // 添加宽度和高度参数
-    url += `?width=${width}&height=${height}`;
-    
-    return url;
-  };
-  
+  // 提供Browser, CreditCard和Flag枚举供外部使用
   return {
     getInitialsAvatar,
-    getGravatarImage,
-    getCountryFlag,
-    getBrowserIcon,
-    getCreditCardIcon,
-    getQRCode,
-    getRandomAvatar
+    getFlag,
+    getBrowser,
+    getCreditCard,
+    getFavicon,
+    getImage,
+    getQR,
+    Browser,
+    CreditCard,
+    Flag
   };
 }; 

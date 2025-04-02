@@ -126,10 +126,9 @@
                     <template v-if="userData.avatarUrl">
                       <img :src="userData.avatarUrl" alt="用户头像" />
                     </template>
-                    <template v-else-if="initialsAvatarUrl">
-                      <img :src="initialsAvatarUrl" alt="首字母头像" />
+                    <template v-else>
+                      <IconUser />
                     </template>
-                    <template v-else>{{ userData.nameInitial }}</template>
                   </a-avatar>
                   <a-avatar :size="32" v-else>
                     <IconUser />
@@ -165,11 +164,6 @@
             <slot />
           </div>
         </a-layout-content>
-
-        <!-- 页脚 -->
-        <a-layout-footer class="bg-white text-center text-gray-500 text-xs sm:text-sm border-t border-gray-200 dashboard-footer">
-          © 2024 FlexNet 管理系统. All rights reserved.
-        </a-layout-footer>
       </a-layout>
     </a-layout>
   </a-config-provider>
@@ -194,7 +188,7 @@ const drawerVisible = ref(false);
 const { getCurrentUser, logout } = useAppwriteAccount();
 
 // 使用Appwrite头像服务
-const { getInitialsAvatar, getGravatarImage } = useAppwriteAvatar();
+const { getInitialsAvatar, getFavicon } = useAppwriteAvatar();
 
 // 用户数据
 const userData = ref<{
@@ -218,14 +212,6 @@ const fetchUserData = async () => {
       let avatarUrl = user.prefs?.avatarUrl || null;
       const userName = user.name || '未知用户';
       const nameInitial = userName.charAt(0).toUpperCase();
-      
-      // 如果用户没有自定义头像，尝试使用Gravatar
-      if (!avatarUrl && user.email) {
-        avatarUrl = getGravatarImage(user.email, 80);
-      }
-      
-      // 生成首字母头像作为备选
-      initialsAvatarUrl.value = getInitialsAvatar(userName, 80, 80, '#F2F3F5');
       
       // 设置用户数据对象
       userData.value = {
