@@ -214,22 +214,20 @@ const fetchUserData = async () => {
     const user = await getCurrentUser();
     
     if (user) {
-      // 从用户偏好中获取头像URL（如果有）
+      // 处理用户头像
       let avatarUrl = user.prefs?.avatarUrl || null;
-      
-      // 用户名称
-      const userName = user.name || '用户';
+      const userName = user.name || '未知用户';
       const nameInitial = userName.charAt(0).toUpperCase();
       
-      // 如果没有头像，先尝试使用Gravatar
+      // 如果用户没有自定义头像，尝试使用Gravatar
       if (!avatarUrl && user.email) {
         avatarUrl = getGravatarImage(user.email, 80);
       }
       
-      // 生成首字母头像作为备用
+      // 生成首字母头像作为备选
       initialsAvatarUrl.value = getInitialsAvatar(userName, 80, 80, '#F2F3F5');
       
-      // 设置用户数据
+      // 设置用户数据对象
       userData.value = {
         id: user.$id,
         name: userName,
@@ -237,11 +235,14 @@ const fetchUserData = async () => {
         avatarUrl,
         nameInitial,
       };
+    } else {
+      userData.value = null;
+      console.log('用户未登录或会话已过期');
+      // 不主动重定向，由auth中间件处理登录状态
     }
   } catch (error) {
+    userData.value = null;
     console.error('获取用户数据失败:', error);
-    // 重定向到登录页面
-    router.push('/auth/login');
   } finally {
     isLoading.value = false;
   }
@@ -250,11 +251,9 @@ const fetchUserData = async () => {
 // 退出登录
 const handleLogout = async () => {
   try {
-    const success = await logout();
-    if (success) {
-      // 退出后重定向到登录页面
-      router.push('/auth/login');
-    }
+    await logout();
+    // 退出后重定向到登录页面
+    router.push('/auth/login');
   } catch (error) {
     console.error('退出登录失败:', error);
   }
