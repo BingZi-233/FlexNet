@@ -222,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, computed } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import type { Models } from 'appwrite';
 import type { FormInstance } from '@arco-design/web-vue';
@@ -252,6 +252,10 @@ const sessionUser = ref<Models.User<Models.Preferences> | null>(null);
 // 使用 Appwrite 账户服务
 const { loginWithEmail, loginWithGithub, loginWithGoogle, createMagicURLToken, isLoggedIn, getCurrentUser, logout } = useAppwriteAccount();
 const router = useRouter();
+const route = useRoute();
+
+// 获取重定向URL（如果有）
+const redirectUrl = computed(() => route.query.redirect?.toString() || '/');
 
 // 检测用户是否已登录
 onMounted(async () => {
@@ -291,8 +295,8 @@ const handleSubmit = async () => {
     await loginWithEmail(form.email, form.password);
     // 登录成功
     Message.success('登录成功！');
-    // 跳转到首页
-    router.push('/');
+    // 跳转到重定向URL或首页
+    router.push(redirectUrl.value);
   } catch (err) {
     console.error('登录过程出错:', err);
     error.value = '邮箱或密码错误，请重试。';
@@ -305,8 +309,8 @@ const handleSubmit = async () => {
 // GitHub登录
 const handleGithubLogin = () => {
   try {
-    // 设置回调URL
-    const successUrl = `${window.location.origin}/auth/callback`;
+    // 设置回调URL，并携带重定向信息
+    const successUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl.value)}`;
     const failureUrl = `${window.location.origin}/auth/login`;
     
     loginWithGithub(successUrl, failureUrl);
@@ -319,8 +323,8 @@ const handleGithubLogin = () => {
 // Google登录
 const handleGoogleLogin = () => {
   try {
-    // 设置回调URL
-    const successUrl = `${window.location.origin}/auth/callback`;
+    // 设置回调URL，并携带重定向信息
+    const successUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl.value)}`;
     const failureUrl = `${window.location.origin}/auth/login`;
     
     loginWithGoogle(successUrl, failureUrl);
@@ -359,7 +363,7 @@ const handleMagicLinkLogin = async () => {
 // 处理使用现有会话
 const handleUseExistingSession = () => {
   Message.success(`欢迎回来，${sessionUser.value?.name || '用户'}`);
-  router.push('/'); // 使用现有会话并重定向到首页
+  router.push(redirectUrl.value); // 使用现有会话并重定向到所需页面
 };
 
 // 处理忽略现有会话

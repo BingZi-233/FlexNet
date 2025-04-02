@@ -23,7 +23,10 @@ const router = useRouter();
 
 // 处理认证回调
 onMounted(async () => {
-  const { userId, secret } = route.query;
+  const { userId, secret, redirect } = route.query;
+  
+  // 处理重定向URL
+  const redirectUrl = redirect ? decodeURIComponent(redirect.toString()) : '/';
   
   // 如果URL包含认证信息，处理魔术链接认证
   if (userId && secret) {
@@ -38,7 +41,7 @@ onMounted(async () => {
       
       // 认证成功
       Message.success('登录成功');
-      router.push('/');
+      router.push(redirectUrl);
     } catch (error) {
       console.error('认证处理失败:', error);
       Message.error('认证失败，请重新登录');
@@ -58,7 +61,7 @@ onMounted(async () => {
         } else {
           Message.success('登录成功');
         }
-        router.push('/');
+        router.push(redirectUrl);
       } else {
         // OAuth可能失败，检查URL是否包含错误信息
         if (route.query.error) {
