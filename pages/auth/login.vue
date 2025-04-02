@@ -331,26 +331,20 @@ const handleGoogleLogin = () => {
 };
 
 // 处理魔术链接登录
-const handleMagicLinkLogin = async (e?: Event) => {
-  e?.preventDefault();
-  
-  // 使用Arco Design表单验证
-  // 注: 这里使用FormInstance的validate方法进行表单验证，比简单的字符串检查更可靠
-  const { error, values } = await magicLinkFormRef.value?.validate() || { error: true, values: {} };
-  
-  if (error) {
-    // 表单验证失败时不处理，Arco Design会自动显示错误信息
-    return;
-  }
+const handleMagicLinkLogin = async () => {
+  if (magicLinkLoading.value) return;
   
   magicLinkLoading.value = true;
+  
   try {
     // 创建魔术链接令牌
-    await createMagicURLToken(values.email);
+    await createMagicURLToken(magicLinkForm.email);
     
     // 显示成功消息
     Message.success('已发送登录链接到您的邮箱，请检查并点击链接登录');
-    magicLinkForm.email = ''; // 清空邮箱输入
+    
+    // 清空邮箱输入
+    magicLinkForm.email = '';
     
     // 重置表单验证状态
     magicLinkFormRef.value?.resetFields();
