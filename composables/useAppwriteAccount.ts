@@ -1,4 +1,4 @@
-import { ID, Account, Client, OAuthProvider } from 'appwrite';
+import { ID, Account, Client, OAuthProvider, Query } from 'appwrite';
 import type { Models } from 'appwrite';
 
 /**
@@ -105,9 +105,46 @@ export const useAppwriteAccount = () => {
   
   /**
    * 更新用户名
+   * @param name 新的用户名，最多128个字符
+   * @returns 返回更新后的用户对象
    */
   const updateName = async (name: string): Promise<Models.User<Models.Preferences>> => {
-    return await $appwrite.account.updateName(name);
+    try {
+      return await $appwrite.account.updateName(name);
+    } catch (error) {
+      console.error('更新用户名出错:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * 更新用户手机号
+   * @param phone 新的手机号码，包含国际区号（如+86）
+   * @param password 用户当前密码
+   * @returns 返回更新后的用户对象
+   */
+  const updatePhone = async (phone: string, password: string): Promise<Models.User<Models.Preferences>> => {
+    try {
+      return await $appwrite.account.updatePhone(phone, password);
+    } catch (error) {
+      console.error('更新手机号出错:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * 更新用户邮箱
+   * @param email 新的电子邮箱
+   * @param password 用户当前密码
+   * @returns 返回更新后的用户对象
+   */
+  const updateEmail = async (email: string, password: string): Promise<Models.User<Models.Preferences>> => {
+    try {
+      return await $appwrite.account.updateEmail(email, password);
+    } catch (error) {
+      console.error('更新邮箱出错:', error);
+      throw error;
+    }
   };
   
   /**
@@ -146,6 +183,54 @@ export const useAppwriteAccount = () => {
    */
   const deleteSession = async (sessionId: string): Promise<void> => {
     await $appwrite.account.deleteSession(sessionId);
+  };
+  
+  /**
+   * 获取会话日志
+   * @param limit 限制返回的记录数量
+   * @param offset 跳过的记录数量
+   * @param queries 其他查询参数数组
+   * @returns 返回会话日志列表
+   */
+  const getSessionLogs = async (limit?: number, offset?: number, queries: string[] = []): Promise<Models.LogList> => {
+    try {
+      // 构建查询参数
+      const queryParams = [
+        // 如果提供了limit，添加limit查询
+        ...(limit ? [Query.limit(limit)] : []),
+        // 如果提供了offset，添加offset查询
+        ...(offset ? [Query.offset(offset)] : []),
+        // 添加其他查询参数
+        ...queries
+      ];
+
+      // 使用构建的查询参数获取日志
+      return await $appwrite.account.listLogs(queryParams);
+    } catch (error) {
+      console.error('获取会话日志失败:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * 中断所有其他会话
+   * @returns Promise<void>
+   */
+  const terminateAllOtherSessions = async (): Promise<void> => {
+    try {
+      const sessions = await $appwrite.account.listSessions();
+      const currentSession = await $appwrite.account.getSession('current');
+      
+      // 删除所有非当前会话
+      await Promise.all(
+        sessions.sessions
+          .filter(session => session.$id !== currentSession.$id)
+          .map(session => $appwrite.account.deleteSession(session.$id))
+      );
+    } catch (error) {
+      console.error('中断其他会话失败:', error);
+      throw error;
+    }
   };
   
   /**
@@ -289,11 +374,15 @@ export const useAppwriteAccount = () => {
     loginWithGoogle,
     logout,
     updateName,
+    updatePhone,
+    updateEmail,
     updatePassword,
     resetPassword,
     confirmPasswordReset,
     getSessions,
     deleteSession,
+    getSessionLogs,
+    terminateAllOtherSessions,
     getPreferences,
     updatePreferences,
     sendVerificationEmail,
