@@ -172,8 +172,8 @@ const handleSubmit = async () => {
     // 尝试自动登录
     try {
       await loginWithEmail(form.email, form.password);
-      // 登录成功，跳转到首页
-      router.push('/');
+      // 登录成功，跳转到仪表盘
+      router.push('/dashboard');
     } catch (loginErr) {
       // 登录失败，跳转到登录页
       router.push('/auth/login');

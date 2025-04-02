@@ -255,7 +255,7 @@ const router = useRouter();
 const route = useRoute();
 
 // 获取重定向URL（如果有）
-const redirectUrl = computed(() => route.query.redirect?.toString() || '/');
+const redirectUrl = computed(() => route.query.redirect?.toString() || '/dashboard');
 
 // 检测用户是否已登录
 onMounted(async () => {
@@ -295,7 +295,7 @@ const handleSubmit = async () => {
     await loginWithEmail(form.email, form.password);
     // 登录成功
     Message.success('登录成功！');
-    // 跳转到重定向URL或首页
+    // 跳转到重定向URL或仪表盘
     router.push(redirectUrl.value);
   } catch (err) {
     console.error('登录过程出错:', err);
@@ -309,7 +309,7 @@ const handleSubmit = async () => {
 // GitHub登录
 const handleGithubLogin = () => {
   try {
-    // 设置回调URL，并携带重定向信息
+    // 设置回调URL，携带重定向信息
     const successUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl.value)}`;
     const failureUrl = `${window.location.origin}/auth/login`;
     
@@ -323,7 +323,7 @@ const handleGithubLogin = () => {
 // Google登录
 const handleGoogleLogin = () => {
   try {
-    // 设置回调URL，并携带重定向信息
+    // 设置回调URL，携带重定向信息
     const successUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl.value)}`;
     const failureUrl = `${window.location.origin}/auth/login`;
     
@@ -363,7 +363,7 @@ const handleMagicLinkLogin = async () => {
 // 处理使用现有会话
 const handleUseExistingSession = () => {
   Message.success(`欢迎回来，${sessionUser.value?.name || '用户'}`);
-  router.push(redirectUrl.value); // 使用现有会话并重定向到所需页面
+  router.push(redirectUrl.value); // 使用现有会话并重定向到指定页面
 };
 
 // 处理忽略现有会话

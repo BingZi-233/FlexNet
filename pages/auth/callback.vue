@@ -26,7 +26,7 @@ onMounted(async () => {
   const { userId, secret, redirect } = route.query;
   
   // 处理重定向URL
-  const redirectUrl = redirect ? decodeURIComponent(redirect.toString()) : '/';
+  const redirectUrl = redirect ? decodeURIComponent(redirect.toString()) : '/dashboard';
   
   // 如果URL包含认证信息，处理魔术链接认证
   if (userId && secret) {
