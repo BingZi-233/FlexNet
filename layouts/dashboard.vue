@@ -1,42 +1,86 @@
 <template>
-  <a-config-provider>
-    <a-layout class="min-h-screen dashboard-layout">
-      <!-- 侧边导航 - 大屏幕显示 -->
-      <a-layout-sider
-        v-show="!isMobile"
-        :collapsed="collapsed"
-        collapsible
-        :width="240"
-        :collapsed-width="64"
-        breakpoint="lg"
-        @collapse="collapsed = $event"
-        class="border-r border-gray-200 transition-all duration-300 dashboard-sider"
-      >
-        <div class="p-4 flex items-center justify-center">
-          <nuxt-link to="/dashboard" class="flex items-center justify-center">
-            <img src="/logo.svg" :class="[collapsed ? 'h-8' : 'h-8 mr-2']" alt="Logo">
-          </nuxt-link>
-        </div>
-        <div class="dashboard-menu-container">
+  <div>
+    <a-config-provider>
+      <a-layout class="min-h-screen dashboard-layout">
+        <!-- 侧边导航 - 大屏幕显示 -->
+        <a-layout-sider
+          v-show="!isMobile"
+          :collapsed="collapsed"
+          collapsible
+          :width="240"
+          :collapsed-width="64"
+          breakpoint="lg"
+          @collapse="collapsed = $event"
+          class="border-r border-gray-200 transition-all duration-300 dashboard-sider"
+        >
+          <div class="p-4 flex items-center justify-center">
+            <nuxt-link to="/dashboard" class="flex items-center justify-center">
+              <img src="/logo.svg" :class="[collapsed ? 'h-8' : 'h-8 mr-2']" alt="Logo">
+            </nuxt-link>
+          </div>
+          <div class="dashboard-menu-container">
+            <a-menu
+              :default-selected-keys="activeMenu"
+              :default-open-keys="['sub1']"
+              :collapsed="collapsed"
+              show-collapse-button
+              @collapse="collapsed = $event"
+              class="border-0"
+            >
+              <a-menu-item key="1">
+                <template #icon><IconDashboard /></template>
+                <nuxt-link to="/dashboard">仪表台</nuxt-link>
+              </a-menu-item>
+              <a-menu-item key="2">
+                <template #icon><IconUser /></template>
+                <nuxt-link to="/dashboard/users">用户管理</nuxt-link>
+              </a-menu-item>
+              <a-menu-item key="3">
+                <template #icon><IconSettings /></template>
+                <nuxt-link to="/dashboard/settings">系统设置</nuxt-link>
+              </a-menu-item>
+              <a-sub-menu key="sub1">
+                <template #icon><IconApps /></template>
+                <template #title>数据分析</template>
+                <a-menu-item key="4">数据概览</a-menu-item>
+                <a-menu-item key="5">流量分析</a-menu-item>
+                <a-menu-item key="6">用户行为</a-menu-item>
+              </a-sub-menu>
+            </a-menu>
+          </div>
+        </a-layout-sider>
+        
+        <!-- 移动端抽屉菜单 -->
+        <a-drawer
+          v-model:visible="drawerVisible"
+          placement="left"
+          :width="240"
+          :footer="false"
+          :mask-closable="true"
+          :body-style="{ padding: 0 }"
+        >
+          <div class="p-4 flex items-center justify-center border-b border-gray-200">
+            <nuxt-link to="/dashboard" class="flex items-center justify-center" @click="drawerVisible = false">
+              <img src="/logo.svg" class="h-8 mr-2" alt="Logo">
+            </nuxt-link>
+          </div>
+          
           <a-menu
             :default-selected-keys="activeMenu"
             :default-open-keys="['sub1']"
-            :collapsed="collapsed"
-            show-collapse-button
-            @collapse="collapsed = $event"
             class="border-0"
           >
             <a-menu-item key="1">
               <template #icon><IconDashboard /></template>
-              <nuxt-link to="/dashboard">仪表台</nuxt-link>
+              <nuxt-link to="/dashboard" @click="drawerVisible = false">仪表台</nuxt-link>
             </a-menu-item>
             <a-menu-item key="2">
               <template #icon><IconUser /></template>
-              <nuxt-link to="/dashboard/users">用户管理</nuxt-link>
+              <nuxt-link to="/dashboard/users" @click="drawerVisible = false">用户管理</nuxt-link>
             </a-menu-item>
             <a-menu-item key="3">
               <template #icon><IconSettings /></template>
-              <nuxt-link to="/dashboard/settings">系统设置</nuxt-link>
+              <nuxt-link to="/dashboard/settings" @click="drawerVisible = false">系统设置</nuxt-link>
             </a-menu-item>
             <a-sub-menu key="sub1">
               <template #icon><IconApps /></template>
@@ -46,127 +90,85 @@
               <a-menu-item key="6">用户行为</a-menu-item>
             </a-sub-menu>
           </a-menu>
-        </div>
-      </a-layout-sider>
-      
-      <!-- 移动端抽屉菜单 -->
-      <a-drawer
-        v-model:visible="drawerVisible"
-        placement="left"
-        :width="240"
-        :footer="false"
-        :mask-closable="true"
-        :body-style="{ padding: 0 }"
-      >
-        <div class="p-4 flex items-center justify-center border-b border-gray-200">
-          <nuxt-link to="/dashboard" class="flex items-center justify-center" @click="drawerVisible = false">
-            <img src="/logo.svg" class="h-8 mr-2" alt="Logo">
-          </nuxt-link>
-        </div>
-        
-        <a-menu
-          :default-selected-keys="activeMenu"
-          :default-open-keys="['sub1']"
-          class="border-0"
-        >
-          <a-menu-item key="1">
-            <template #icon><IconDashboard /></template>
-            <nuxt-link to="/dashboard" @click="drawerVisible = false">仪表台</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="2">
-            <template #icon><IconUser /></template>
-            <nuxt-link to="/dashboard/users" @click="drawerVisible = false">用户管理</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="3">
-            <template #icon><IconSettings /></template>
-            <nuxt-link to="/dashboard/settings" @click="drawerVisible = false">系统设置</nuxt-link>
-          </a-menu-item>
-          <a-sub-menu key="sub1">
-            <template #icon><IconApps /></template>
-            <template #title>数据分析</template>
-            <a-menu-item key="4">数据概览</a-menu-item>
-            <a-menu-item key="5">流量分析</a-menu-item>
-            <a-menu-item key="6">用户行为</a-menu-item>
-          </a-sub-menu>
-        </a-menu>
-      </a-drawer>
+        </a-drawer>
 
-      <a-layout class="dashboard-content-layout" :style="{ marginLeft: isMobile ? '0' : (collapsed ? '64px' : '240px') }">
-        <!-- 头部工具栏 -->
-        <a-layout-header class="bg-white flex items-center justify-between border-b border-gray-200 shadow-sm dashboard-header">
-          <div class="flex items-center">
-            <a-button
-              type="text"
-              shape="circle"
-              @click="isMobile ? (drawerVisible = true) : (collapsed = !collapsed)"
-              class="mr-4 hover:bg-gray-50"
-            >
-              <template #icon>
-                <IconMenu v-if="isMobile" />
-                <IconMenuFold v-else-if="!collapsed" />
-                <IconMenuUnfold v-else />
-              </template>
-            </a-button>
-            <a-breadcrumb>
-              <a-breadcrumb-item>首页</a-breadcrumb-item>
-              <a-breadcrumb-item>{{ currentPageTitle }}</a-breadcrumb-item>
-            </a-breadcrumb>
-          </div>
-          <div class="flex items-center">
-            <a-space>
-              <a-button shape="circle" type="text" class="hover:bg-gray-50">
-                <template #icon><IconNotification /></template>
-              </a-button>
-              <a-button shape="circle" type="text" class="hover:bg-gray-50 hidden sm:flex">
-                <template #icon><IconSettings /></template>
-              </a-button>
-              <a-dropdown trigger="click">
-                <div class="flex items-center cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-50">
-                  <a-avatar :size="32" v-if="userData">
-                    <template v-if="userData.avatarUrl">
-                      <img :src="userData.avatarUrl" alt="用户头像" />
-                    </template>
-                    <template v-else>
-                      <IconUser />
-                    </template>
-                  </a-avatar>
-                  <a-avatar :size="32" v-else>
-                    <IconUser />
-                  </a-avatar>
-                  <span class="ml-2 text-sm hidden sm:inline">{{ userData ? userData.name : '加载中...' }}</span>
-                  <IconDown class="ml-1 text-xs hidden sm:inline" />
-                </div>
-                <template #content>
-                  <a-doption @click="$router.push('/dashboard/profile')">
-                    <template #icon><IconUser /></template>
-                    个人信息
-                  </a-doption>
-                  <a-doption @click="$router.push('/dashboard/settings?tab=account')">
-                    <template #icon><IconSettings /></template>
-                    账号设置
-                  </a-doption>
-                  <a-divider style="margin: 4px 0" />
-                  <!-- 插槽允许在其他组件中扩展用户菜单 -->
-                  <slot name="user-menu-items"></slot>
-                  <a-doption @click="handleLogout">
-                    <template #icon><IconExport /></template>
-                    退出登录
-                  </a-doption>
+        <a-layout class="dashboard-content-layout" :style="{ marginLeft: isMobile ? '0' : (collapsed ? '64px' : '240px') }">
+          <!-- 头部工具栏 -->
+          <a-layout-header class="bg-white flex items-center justify-between border-b border-gray-200 shadow-sm dashboard-header">
+            <div class="flex items-center">
+              <a-button
+                type="text"
+                shape="circle"
+                @click="isMobile ? (drawerVisible = true) : (collapsed = !collapsed)"
+                class="mr-4 hover:bg-gray-50"
+              >
+                <template #icon>
+                  <IconMenu v-if="isMobile" />
+                  <IconMenuFold v-else-if="!collapsed" />
+                  <IconMenuUnfold v-else />
                 </template>
-              </a-dropdown>
-            </a-space>
-          </div>
-        </a-layout-header>
+              </a-button>
+              <a-breadcrumb>
+                <a-breadcrumb-item>首页</a-breadcrumb-item>
+                <a-breadcrumb-item>{{ currentPageTitle }}</a-breadcrumb-item>
+              </a-breadcrumb>
+            </div>
+            <div class="flex items-center">
+              <a-space>
+                <a-button shape="circle" type="text" class="hover:bg-gray-50">
+                  <template #icon><IconNotification /></template>
+                </a-button>
+                <a-button shape="circle" type="text" class="hover:bg-gray-50 hidden sm:flex">
+                  <template #icon><IconSettings /></template>
+                </a-button>
+                <a-dropdown trigger="click">
+                  <div class="flex items-center cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-50">
+                    <a-avatar :size="32" v-if="userData">
+                      <template v-if="userData.avatarUrl">
+                        <img :src="userData.avatarUrl" alt="用户头像" />
+                      </template>
+                      <template v-else>
+                        <IconUser />
+                      </template>
+                    </a-avatar>
+                    <a-avatar :size="32" v-else>
+                      <IconUser />
+                    </a-avatar>
+                    <span class="ml-2 text-sm hidden sm:inline">{{ userData ? userData.name : '加载中...' }}</span>
+                    <IconDown class="ml-1 text-xs hidden sm:inline" />
+                  </div>
+                  <template #content>
+                    <a-doption @click="$router.push('/dashboard/profile')">
+                      <template #icon><IconUser /></template>
+                      个人信息
+                    </a-doption>
+                    <a-doption @click="$router.push('/dashboard/settings?tab=account')">
+                      <template #icon><IconSettings /></template>
+                      账号设置
+                    </a-doption>
+                    <a-divider style="margin: 4px 0" />
+                    <!-- 插槽允许在其他组件中扩展用户菜单 -->
+                    <slot name="user-menu-items"></slot>
+                    <a-doption @click="handleLogout">
+                      <template #icon><IconExport /></template>
+                      退出登录
+                    </a-doption>
+                  </template>
+                </a-dropdown>
+              </a-space>
+            </div>
+          </a-layout-header>
 
-        <!-- 主要内容 -->
-        <a-layout-content class="bg-gray-50 dashboard-content">
-          <div class="dashboard-content-inner">
-            <slot />
-          </div>
-        </a-layout-content>
+          <!-- 主要内容 -->
+          <a-layout-content class="bg-gray-50 dashboard-content">
+            <div class="dashboard-content-inner">
+              <slot />
+            </div>
+          </a-layout-content>
+        </a-layout>
       </a-layout>
-    </a-layout>
-  </a-config-provider>
+    </a-config-provider>
+  </div>
 </template>
 
 <script lang="ts" setup>

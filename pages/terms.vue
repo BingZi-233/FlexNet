@@ -105,10 +105,6 @@
 
 <script setup>
 definePageMeta({
-  layout: 'default',
-  pageTransition: {
-    name: 'page',
-    mode: 'out-in'
-  }
+  layout: 'default'
 })
 </script> 
