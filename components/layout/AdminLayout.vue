@@ -3,7 +3,7 @@
     <!-- 侧边栏 - 桌面版 -->
     <aside 
       v-if="!isMobile" 
-      class="bg-white border-r border-gray-200 transition-all duration-300 h-screen overflow-y-auto fixed top-0 left-0 z-10"
+      class="bg-white border-r border-gray-200 transition-all duration-300 h-screen overflow-hidden fixed top-0 left-0 z-10 flex flex-col"
       :class="[collapsed ? 'w-16' : 'w-60']"
     >
       <!-- Logo区域 -->
@@ -33,20 +33,24 @@
         </a-button>
       </div>
       
-      <!-- 菜单区域 -->
-      <div class="flex flex-col">
+      <!-- 菜单区域 - 使用flex-grow让它占据中间所有空间 -->
+      <div class="flex-1 overflow-hidden flex flex-col min-h-0">
+        <!-- 菜单可滚动区域 -->
         <div class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
           <slot name="menu"></slot>
         </div>
         
-        <!-- 底部信息 -->
-        <div v-if="!collapsed" class="p-4 border-t border-gray-100 text-xs text-gray-500 sticky bottom-0 bg-white">
+        <!-- 底部信息 - 始终固定在底部 -->
+        <div v-if="!collapsed" class="p-4 border-t border-gray-100 text-xs text-gray-500 bg-white mt-auto">
           <slot name="sider-footer">
             <div class="flex items-center justify-between">
               <span>© {{ new Date().getFullYear() }}</span>
               <span>v{{ appVersion || '1.0.0' }}</span>
             </div>
           </slot>
+        </div>
+        <div v-else class="p-2 border-t border-gray-100 bg-white mt-auto flex justify-center">
+          <span class="text-xs text-gray-500">{{ new Date().getFullYear() }}</span>
         </div>
       </div>
     </aside>
@@ -72,12 +76,12 @@
       </div>
       
       <!-- 抽屉菜单 -->
-      <div class="overflow-y-auto overflow-x-hidden">
+      <div class="flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0">
         <slot name="drawer-menu"></slot>
       </div>
       
       <!-- 抽屉底部 -->
-      <div class="p-4 border-t border-gray-100 text-xs text-gray-500 sticky bottom-0 bg-white">
+      <div class="p-4 border-t border-gray-100 text-xs text-gray-500 bg-white mt-auto">
         <slot name="drawer-footer">
           <div class="flex items-center justify-between">
             <span>© {{ new Date().getFullYear() }}</span>
