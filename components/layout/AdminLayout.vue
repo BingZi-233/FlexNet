@@ -9,7 +9,7 @@
       <!-- Logo区域 -->
       <div class="h-16 border-b border-gray-100 p-4 flex items-center sticky top-0 bg-white z-10" :class="[collapsed ? 'justify-center' : 'justify-start']">
         <nuxt-link :to="homeRoute" class="flex items-center">
-          <img src="/logo.svg" :class="[collapsed ? 'h-8' : 'h-8 mr-2']" alt="Logo">
+          <img :src="collapsed ? '/favicon.svg' : '/logo.svg'" :class="[collapsed ? 'h-8' : 'h-8 mr-2']" alt="Logo">
           <span v-if="!collapsed && headerTitle" class="text-gray-800 font-bold text-base truncate">{{ headerTitle }}</span>
         </nuxt-link>
       </div>
@@ -36,21 +36,15 @@
       <!-- 菜单区域 - 使用flex-grow让它占据中间所有空间 -->
       <div class="flex-1 overflow-hidden flex flex-col min-h-0">
         <!-- 菜单可滚动区域 -->
-        <div class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <slot name="menu"></slot>
         </div>
         
         <!-- 底部信息 - 始终固定在底部 -->
-        <div v-if="!collapsed" class="p-4 border-t border-gray-100 text-xs text-gray-500 bg-white mt-auto">
-          <slot name="sider-footer">
-            <div class="flex items-center justify-between">
-              <span>© {{ new Date().getFullYear() }}</span>
-              <span>v{{ appVersion || '1.0.0' }}</span>
-            </div>
-          </slot>
+        <div v-if="!collapsed" class="p-4 border-t border-gray-100 bg-white mt-auto">
+          <slot name="sider-footer"></slot>
         </div>
         <div v-else class="p-2 border-t border-gray-100 bg-white mt-auto flex justify-center">
-          <span class="text-xs text-gray-500">{{ new Date().getFullYear() }}</span>
         </div>
       </div>
     </aside>
@@ -81,13 +75,8 @@
       </div>
       
       <!-- 抽屉底部 -->
-      <div class="p-4 border-t border-gray-100 text-xs text-gray-500 bg-white mt-auto">
-        <slot name="drawer-footer">
-          <div class="flex items-center justify-between">
-            <span>© {{ new Date().getFullYear() }}</span>
-            <span>v{{ appVersion || '1.0.0' }}</span>
-          </div>
-        </slot>
+      <div class="p-4 border-t border-gray-100 bg-white mt-auto">
+        <slot name="drawer-footer"></slot>
       </div>
     </a-drawer>
 
@@ -105,9 +94,6 @@
         
         <!-- 中间内容 - 可以放置标题或自定义内容 -->
         <div class="flex-1 flex justify-center md:justify-start">
-          <slot name="header-content">
-            <h1 class="text-lg font-medium text-gray-800">{{ currentPageTitle }}</h1>
-          </slot>
         </div>
         
         <!-- 右侧用户区 -->
@@ -322,15 +308,4 @@ watch(
     }
   }
 );
-</script>
-
-<style>
-/* 自定义滚动条隐藏类 */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style> 
+</script> 
