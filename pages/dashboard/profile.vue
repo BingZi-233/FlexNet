@@ -242,6 +242,51 @@
           </div>
         </div>
         
+        <!-- 角色申请卡片 -->
+        <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden mb-6">
+          <div class="border-b border-gray-100 dark:border-gray-700 p-4">
+            <div class="flex items-center">
+              <IconIdcard class="mr-2 text-primary text-lg" />
+              <span class="text-lg font-medium">角色申请</span>
+            </div>
+            <div class="mt-1 text-gray-500 text-sm">申请更高级别的角色获取更多功能</div>
+          </div>
+          
+          <div class="p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium">开发者角色</div>
+                <div class="text-gray-500 text-sm mt-1">获取API访问权限和开发者中心功能</div>
+              </div>
+              <a-button 
+                type="primary" 
+                status="success" 
+                :loading="applyingDev"
+                :disabled="hasDevRole || applyingDev"
+                @click="applyForDevRole"
+              >
+                {{ hasDevRole ? '已获取' : '申请' }}
+              </a-button>
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium">管理员角色</div>
+                <div class="text-gray-500 text-sm mt-1">获取完整的系统管理权限</div>
+              </div>
+              <a-button 
+                type="primary" 
+                status="warning" 
+                :loading="applyingAdmin"
+                :disabled="hasAdminRole || applyingAdmin || !hasDevRole"
+                @click="applyForAdminRole"
+              >
+                {{ hasAdminRole ? '已获取' : (hasDevRole ? '申请' : '需先成为开发者') }}
+              </a-button>
+            </div>
+          </div>
+        </div>
+        
         <!-- 账号关联卡片 -->
         <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden">
           <div class="border-b border-gray-100 dark:border-gray-700 p-4">
@@ -588,9 +633,11 @@ import {
   IconDown,
   IconUp,
   IconPhone,
-  IconEmail
+  IconEmail,
+  IconIdcard
 } from '@arco-design/web-vue/es/icon';
 import { Query } from 'appwrite';
+import { useUserLabels } from '~/composables/useUserLabels';
 
 definePageMeta({
   layout: 'dashboard'
@@ -612,7 +659,9 @@ const {
   deleteIdentity,
   getSessionLogs,
   terminateAllOtherSessions,
-  deleteSession
+  deleteSession,
+  hasDevPermission,
+  hasAdminPermission
 } = useAppwriteAccount();
 
 const { uploadFile, getFileViewUrl } = useAppwriteStorage();
@@ -1318,9 +1367,51 @@ const submitUpdateEmail = async () => {
   }
 };
 
+// 角色申请状态
+const { becomeDevUser, becomeAdminUser } = useUserLabels();
+const hasDevRole = ref(false);
+const hasAdminRole = ref(false);
+const applyingDev = ref(false);
+const applyingAdmin = ref(false);
+
+// 检查用户当前角色权限
+const checkUserRoles = async () => {
+  hasDevRole.value = await hasDevPermission();
+  hasAdminRole.value = await hasAdminPermission();
+};
+
+// 申请开发者角色
+const applyForDevRole = async () => {
+  try {
+    applyingDev.value = true;
+    await becomeDevUser();
+    await checkUserRoles();
+    Message.success('已成功申请开发者角色');
+  } catch (error: any) {
+    Message.error(error.message || '申请失败，请稍后重试');
+  } finally {
+    applyingDev.value = false;
+  }
+};
+
+// 申请管理员角色
+const applyForAdminRole = async () => {
+  try {
+    applyingAdmin.value = true;
+    await becomeAdminUser();
+    await checkUserRoles();
+    Message.success('已成功申请管理员角色');
+  } catch (error: any) {
+    Message.error(error.message || '申请失败，请稍后重试');
+  } finally {
+    applyingAdmin.value = false;
+  }
+};
+
 onMounted(async () => {
   // 所有请求并行执行，互不等待
   fetchUserData();
   handleOAuthCallback();
+  await checkUserRoles();
 });
 </script>

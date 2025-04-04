@@ -248,9 +248,39 @@ export const useAppwriteAccount = () => {
   
   /**
    * 更新用户偏好设置
+   * @param prefs 要更新的偏好设置
+   * @returns 返回更新后的用户对象
    */
   const updatePreferences = async (prefs: object): Promise<Models.User<Models.Preferences>> => {
-    return await $appwrite.account.updatePrefs(prefs);
+    try {
+      return await $appwrite.account.updatePrefs(prefs);
+    } catch (error) {
+      console.error('更新用户偏好设置出错:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * 更新用户角色
+   * @param role 新的用户角色
+   * @returns 返回更新后的用户对象
+   */
+  const updateUserRole = async (role: string): Promise<Models.User<Models.Preferences>> => {
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        throw new Error('未登录用户无法更新角色');
+      }
+      
+      const currentPrefs = currentUser.prefs || {};
+      return await updatePreferences({
+        ...currentPrefs,
+        role
+      });
+    } catch (error) {
+      console.error('更新用户角色出错:', error);
+      throw error;
+    }
   };
   
   /**
@@ -363,6 +393,54 @@ export const useAppwriteAccount = () => {
     }
   };
   
+  /**
+   * 获取用户的所有标签
+   * @returns 返回用户标签列表
+   */
+  const getUserLabels = async (): Promise<string[]> => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        return [];
+      }
+      return user.labels || [];
+    } catch (error) {
+      console.error('获取用户标签出错:', error);
+      return [];
+    }
+  };
+
+  /**
+   * 检查用户是否有指定标签
+   * @param label 要检查的标签
+   * @returns 是否有该标签
+   */
+  const hasUserLabel = async (label: string): Promise<boolean> => {
+    try {
+      const labels = await getUserLabels();
+      return labels.includes(label);
+    } catch (error) {
+      console.error('检查用户标签出错:', error);
+      return false;
+    }
+  };
+
+  /**
+   * 检查用户是否有开发者权限
+   * @returns 是否有开发者权限
+   */
+  const hasDevPermission = async (): Promise<boolean> => {
+    return await hasUserLabel('developer') || await hasUserLabel('admin');
+  };
+
+  /**
+   * 检查用户是否有管理员权限
+   * @returns 是否有管理员权限
+   */
+  const hasAdminPermission = async (): Promise<boolean> => {
+    return await hasUserLabel('admin');
+  };
+  
   // 返回所有方法
   return {
     getCurrentUser,
@@ -385,6 +463,7 @@ export const useAppwriteAccount = () => {
     terminateAllOtherSessions,
     getPreferences,
     updatePreferences,
+    updateUserRole,
     sendVerificationEmail,
     confirmVerification,
     createJWT,
@@ -394,6 +473,10 @@ export const useAppwriteAccount = () => {
     createPhoneToken,
     updatePhoneSession,
     getIdentities,
-    deleteIdentity
+    deleteIdentity,
+    getUserLabels,
+    hasUserLabel,
+    hasDevPermission,
+    hasAdminPermission
   };
 }; 
