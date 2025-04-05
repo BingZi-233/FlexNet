@@ -15,7 +15,7 @@
       </div>
       
       <!-- 折叠控制按钮 - 仅在非移动设备显示 -->
-      <div v-if="!isMobile" class="px-4 py-2">
+      <div class="px-4 py-2 border-b border-gray-100">
         <a-button 
           type="text" 
           class="w-full flex items-center h-10 transition-all duration-300 hover:bg-gray-50"
@@ -33,18 +33,18 @@
         </a-button>
       </div>
       
-      <!-- 菜单区域 - 使用flex-grow让它占据中间所有空间 -->
+      <!-- 菜单区域 -->
       <div class="flex-1 overflow-hidden flex flex-col min-h-0">
         <!-- 菜单可滚动区域 -->
         <div class="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <slot name="menu"></slot>
+          <div class="py-2" :class="[collapsed ? 'px-2' : 'px-4']">
+            <slot name="menu"></slot>
+          </div>
         </div>
         
         <!-- 底部信息 - 始终固定在底部 -->
-        <div v-if="!collapsed" class="p-4 border-t border-gray-100 bg-white mt-auto">
+        <div class="border-t border-gray-100 bg-white mt-auto" :class="[collapsed ? 'p-2 flex justify-center' : 'p-4']">
           <slot name="sider-footer"></slot>
-        </div>
-        <div v-else class="p-2 border-t border-gray-100 bg-white mt-auto flex justify-center">
         </div>
       </div>
     </aside>
@@ -71,7 +71,9 @@
       
       <!-- 抽屉菜单 -->
       <div class="flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0">
-        <slot name="drawer-menu"></slot>
+        <div class="py-2 px-4">
+          <slot name="drawer-menu"></slot>
+        </div>
       </div>
       
       <!-- 抽屉底部 -->
@@ -143,8 +145,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, computed, useSlots, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, watch, computed, useSlots } from 'vue';
+import { useRoute } from '#imports';
+import { useStorage, useBreakpoints } from '@vueuse/core';
 
 const props = defineProps({
   userData: {
@@ -196,11 +199,16 @@ const props = defineProps({
 // 提供自定义事件
 const emit = defineEmits(['collapse', 'update:mobile']);
 
-// 状态管理
-const collapsed = ref(props.defaultCollapsed);
-const isMobile = ref(false);
-const wasCollapsedBeforeMobile = ref(props.defaultCollapsed);
+// 使用useStorage替代localStorage操作，自动同步
+const collapsed = useStorage('admin-sidebar-collapsed', props.defaultCollapsed);
+const wasCollapsedBeforeMobile = useStorage('admin-sidebar-collapsed-before-mobile', props.defaultCollapsed);
 const drawerVisible = ref(false);
+
+// 使用useBreakpoints进行响应式断点管理
+const breakpoints = useBreakpoints({
+  mobile: props.mobileBreakpoint
+});
+const isMobile = breakpoints.smaller('mobile');
 
 // 路由
 const route = useRoute();
@@ -235,77 +243,29 @@ const collapseButtonText = computed(() => {
 
 // 切换折叠状态
 const toggleCollapse = () => {
-  setCollapsed(!collapsed.value);
-};
-
-// 设置折叠状态
-const setCollapsed = (value) => {
-  collapsed.value = value;
+  collapsed.value = !collapsed.value;
   emit('collapse', collapsed.value);
-  saveCollapseState();
 };
 
-// 保存折叠状态到本地存储
-const saveCollapseState = () => {
-  if (process.client) {
-    localStorage.setItem('admin-sidebar-collapsed', collapsed.value);
+// 当移动状态变化时的处理
+watch(isMobile, (newIsMobile, oldIsMobile) => {
+  if (newIsMobile) {
+    // 进入移动模式时，记住之前的折叠状态
+    wasCollapsedBeforeMobile.value = collapsed.value;
+    // 移动设备强制折叠侧边栏
+    collapsed.value = true;
+  } else if (oldIsMobile) {
+    // 退出移动模式时，恢复之前的折叠状态
+    collapsed.value = wasCollapsedBeforeMobile.value;
   }
-};
-
-// 从本地存储恢复状态
-const restoreUserPreferences = () => {
-  if (process.client) {
-    const savedCollapsed = localStorage.getItem('admin-sidebar-collapsed');
-    if (savedCollapsed !== null) {
-      // 使用重构后的方法设置折叠状态
-      setCollapsed(savedCollapsed === 'true');
-      wasCollapsedBeforeMobile.value = collapsed.value;
-    }
-  }
-};
-
-// 响应式处理
-const handleResize = () => {
-  const windowWidth = window.innerWidth;
-  const newIsMobile = windowWidth < props.mobileBreakpoint;
   
-  // 如果移动状态发生变化
-  if (newIsMobile !== isMobile.value) {
-    if (newIsMobile) {
-      // 进入移动模式时，记住之前的折叠状态
-      wasCollapsedBeforeMobile.value = collapsed.value;
-      // 移动设备强制折叠侧边栏
-      setCollapsed(true);
-    } else {
-      // 退出移动模式时，恢复之前的折叠状态
-      nextTick(() => {
-        setCollapsed(wasCollapsedBeforeMobile.value);
-      });
-    }
-    
-    isMobile.value = newIsMobile;
-    emit('update:mobile', isMobile.value);
-  }
-};
-
-// 监听窗口大小变化
-onMounted(() => {
-  restoreUserPreferences();
-  handleResize();
-  window.addEventListener('resize', handleResize);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize);
+  emit('update:mobile', newIsMobile);
 });
 
 // 监听路由变化关闭抽屉
-watch(
-  () => route.path,
-  () => {
-    if (drawerVisible.value) {
-      drawerVisible.value = false;
-    }
+watch(() => route.path, () => {
+  if (drawerVisible.value) {
+    drawerVisible.value = false;
   }
-);
+});
 </script> 
