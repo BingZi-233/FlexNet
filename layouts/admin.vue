@@ -1,10 +1,15 @@
 <template>
-  <AdminLayout 
+  <DashboardLayout 
     :userData="userData as Record<string, any>"
-    headerTitle="管理控制台"
-    breadcrumbTitle="管理控制台"
-    homeRoute="/admin"
-    :currentPageTitle="currentPageTitle"
+    :layoutConfig="{
+      headerTitle: '管理控制台',
+      breadcrumbTitle: '管理控制台',
+      homeRoute: '/admin',
+      currentPageTitle: currentPageTitle,
+      showNotifications: true,
+      showSettings: true,
+      showUserProfile: true
+    }"
     @collapse="handleLayoutCollapse"
     @update:mobile="handleMobileChange"
   >
@@ -174,7 +179,7 @@
     </template>
     
     <slot />
-  </AdminLayout>
+  </DashboardLayout>
 </template>
 
 <script lang="ts" setup>
@@ -183,7 +188,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
 import { UserRole } from '~/types/user';
-import AdminLayout from '~/components/layout/AdminLayout.vue';
+import DashboardLayout from '~/components/layout/DashboardLayout.vue';
 
 // 路由
 const route = useRoute();
@@ -303,7 +308,7 @@ const activeMenu = computed(() => {
   return ['1'];
 });
 
-// 监听AdminLayout的收起/展开事件
+// 监听DashboardLayout的收起/展开事件
 const handleLayoutCollapse = (isCollapsed: boolean) => {
   collapsed.value = isCollapsed;
 };
