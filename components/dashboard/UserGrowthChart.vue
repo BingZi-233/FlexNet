@@ -14,11 +14,15 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+// 定义图表数据类型
+interface ChartItem {
+  date: string;
+  value: number;
+}
 
 // 模拟数据
-const mockData = ref([
+const mockData = ref<ChartItem[]>([
   { date: '周一', value: 120 },
   { date: '周二', value: 180 },
   { date: '周三', value: 150 },

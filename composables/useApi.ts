@@ -1,7 +1,10 @@
 import { adminMenuConfig, dashboardMenuConfig, developerMenuConfig } from '~/mock/data/menuConfig';
 
+// 获取配置
+const config = useRuntimeConfig();
+
 // 获取环境变量，判断是否使用mock数据
-const useMockData = () => process.env.NODE_ENV === 'development' || process.env.USE_MOCK === 'true';
+const useMockData = () => import.meta.dev || config.public.useMock;
 
 // 模拟请求延迟
 const mockDelay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));

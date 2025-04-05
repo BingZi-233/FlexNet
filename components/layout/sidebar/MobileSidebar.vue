@@ -34,10 +34,7 @@
 </template>
 
 <script setup lang="ts">
-interface MobileConfig {
-  headerTitle: string;
-  homeRoute: string;
-}
+import type { MobileConfig } from '~/types/layout';
 
 const props = defineProps({
   visible: {

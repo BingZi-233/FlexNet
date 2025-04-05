@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { MenuItem } from '~/mock/data/menuConfig';
+import type { MenuItem } from '~/types/layout';
 import { getAdminMenu, getDashboardMenu, getDeveloperMenu } from '~/mock/api/menu';
 
 // 定义API返回的数据结构
@@ -18,8 +18,11 @@ interface MenuDataResult {
   refresh: () => Promise<MenuDataResult>;
 }
 
+// 获取配置
+const config = useRuntimeConfig();
+
 // 环境变量控制是否使用mock数据
-const useMockData = process.env.NODE_ENV === 'development' || process.env.USE_MOCK === 'true';
+const useMockData = import.meta.dev || config.public.useMock;
 
 // 菜单数据缓存
 const menuCache = {
@@ -36,10 +39,92 @@ const menuCache = {
 };
 
 /**
+ * 菜单管理组合式函数
+ * @param menuConfig 菜单配置
+ * @param defaultSelectedKeys 默认选中的菜单项
+ * @param defaultOpenKeys 默认展开的菜单项
+ */
+export function useMenu(
+  menuConfig: MenuItem[] = [],
+  defaultSelectedKeys: string[] = ['1'],
+  defaultOpenKeys: string[] = []
+) {
+  // 菜单状态
+  const selectedKeys = useState<string[]>('menu-selected-keys', () => defaultSelectedKeys);
+  const openKeys = useState<string[]>('menu-open-keys', () => defaultOpenKeys);
+  const route = useRoute();
+
+  // 根据路由查找菜单项
+  const findMenuItemByRoute = (items: MenuItem[], path: string): MenuItem | null => {
+    for (const item of items) {
+      if (item.route === path) {
+        return item;
+      }
+      if (item.children?.length) {
+        const found = findMenuItemByRoute(item.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // 设置当前选中的菜单项
+  const setActiveMenuItem = (path: string) => {
+    const menuItem = findMenuItemByRoute(menuConfig, path);
+    if (menuItem) {
+      selectedKeys.value = [menuItem.key];
+      
+      // 查找父级菜单并展开
+      const findParentKeys = (items: MenuItem[], targetKey: string, parents: string[] = []): string[] => {
+        for (const item of items) {
+          if (item.children?.length) {
+            if (item.children.some(child => child.key === targetKey)) {
+              return [...parents, item.key];
+            }
+            const result = findParentKeys(item.children, targetKey, [...parents, item.key]);
+            if (result.length) return result;
+          }
+        }
+        return [];
+      };
+      
+      const parentKeys = findParentKeys(menuConfig, menuItem.key);
+      if (parentKeys.length) {
+        openKeys.value = parentKeys;
+      }
+    }
+  };
+
+  // 监听路由变化，更新选中的菜单项
+  watch(() => route.path, (newPath) => {
+    setActiveMenuItem(newPath);
+  }, { immediate: true });
+
+  // 更新选择的菜单
+  const updateSelectedKeys = (keys: string[]) => {
+    selectedKeys.value = keys;
+  };
+
+  // 更新打开的菜单
+  const updateOpenKeys = (keys: string[]) => {
+    openKeys.value = keys;
+  };
+
+  return {
+    menuConfig,
+    selectedKeys,
+    openKeys,
+    updateSelectedKeys,
+    updateOpenKeys,
+    setActiveMenuItem
+  };
+}
+
+/**
  * 菜单数据获取组合式函数
  * @param defaultData 默认数据，可用于初始显示
  */
-export function useMenu(defaultData: MenuItem[] = []) {
+export function useMenuData(defaultData: MenuItem[] = []) {
   const menuData = ref<MenuItem[]>(defaultData);
   const loading = ref(false);
   const error = ref<Error | null>(null);

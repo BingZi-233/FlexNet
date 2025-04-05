@@ -5,7 +5,7 @@ import { UserRole } from '~/types/user';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // 仅在客户端运行
-  if (process.client) {
+  if (import.meta.client) {
     console.log('[Auth中间件] 路由请求:', to.path);
     const { isLoggedIn, getCurrentUser } = useAppwriteAccount();
     

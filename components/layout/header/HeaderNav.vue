@@ -51,19 +51,7 @@
 </template>
 
 <script setup lang="ts">
-interface UserData {
-  name?: string;
-  avatarUrl?: string;
-  [key: string]: any;
-}
-
-interface HeaderConfig {
-  isMobile: boolean;
-  showNotifications: boolean;
-  showSettings: boolean;
-  showUserProfile: boolean;
-  userData: UserData | null;
-}
+import type { HeaderConfig } from '~/types/layout';
 
 defineProps({
   config: {

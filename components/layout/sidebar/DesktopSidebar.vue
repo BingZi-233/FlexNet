@@ -53,12 +53,7 @@
 </template>
 
 <script setup lang="ts">
-interface SidebarConfig {
-  collapsed: boolean;
-  headerTitle: string;
-  homeRoute: string;
-  collapseButtonText: string;
-}
+import type { SidebarConfig } from '~/types/layout';
 
 defineProps({
   config: {

@@ -8,8 +8,8 @@
     >
       <template #menu>
         <a-menu
-          :default-selected-keys="defaultSelectedKeys"
-          :default-open-keys="defaultOpenKeys"
+          :selected-keys="selectedKeys"
+          :open-keys="openKeys"
           :collapsed="collapsed"
           class="border-0"
         >
@@ -66,8 +66,8 @@
     >
       <template #drawer-menu>
         <a-menu
-          :default-selected-keys="defaultSelectedKeys"
-          :default-open-keys="defaultOpenKeys"
+          :selected-keys="selectedKeys"
+          :open-keys="openKeys"
           class="border-0"
         >
           <template v-for="item in menuConfig" :key="item.key">
@@ -120,7 +120,7 @@
     <HeaderNav 
       :class="getHeaderClass" 
       :config="headerConfig"
-      @open-drawer="drawerVisible = true"
+      @open-drawer="openDrawer"
     >
       <template #user-dropdown>
         <slot name="user-dropdown"></slot>
@@ -140,41 +140,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
 import { useRoute } from '#imports';
-import { useStorage, useBreakpoints } from '@vueuse/core';
-
+// 从类型定义文件中导入类型
+import type { UserData, MenuItem, LayoutConfig } from '~/types/layout';
 // 导入子组件
 import DesktopSidebar from './sidebar/DesktopSidebar.vue';
 import MobileSidebar from './sidebar/MobileSidebar.vue';
 import HeaderNav from './header/HeaderNav.vue';
-
-// 定义组件配置类型
-interface UserData {
-  name?: string;
-  avatarUrl?: string;
-  [key: string]: any;
-}
-
-interface MenuItem {
-  key: string;
-  title: string;
-  icon?: any; // 直接接收图标组件
-  route?: string;
-  children?: MenuItem[];
-  divider?: boolean;
-}
-
-interface LayoutConfig {
-  headerTitle: string;
-  breadcrumbTitle: string;
-  homeRoute: string;
-  currentPageTitle: string;
-  appVersion?: string;
-  showNotifications?: boolean;
-  showSettings?: boolean;
-  showUserProfile?: boolean;
-}
+// 使用composables
+import { useMenu } from '~/composables/useMenu';
+import { useResponsiveLayout } from '~/composables/useResponsiveLayout';
 
 const props = defineProps({
   userData: {
@@ -210,39 +185,38 @@ const props = defineProps({
 // 提供自定义事件
 const emit = defineEmits(['collapse', 'update:mobile']);
 
-// 响应式状态管理
-const collapsed = useStorage('dashboard-sidebar-collapsed', props.defaultCollapsed);
-const wasCollapsedBeforeMobile = useStorage('dashboard-sidebar-collapsed-before-mobile', props.defaultCollapsed);
-const drawerVisible = ref(false);
+// 使用菜单composable
+const { selectedKeys, openKeys } = useMenu(
+  props.menuConfig,
+  props.defaultSelectedKeys,
+  props.defaultOpenKeys
+);
 
-// 响应式断点管理
-const breakpoints = useBreakpoints({
-  mobile: props.mobileBreakpoint
+// 使用响应式布局composable
+const { 
+  isMobile, 
+  drawerVisible, 
+  collapsed, 
+  toggleCollapse, 
+  openDrawer,
+  closeDrawer,
+  getMainClass,
+  getHeaderClass
+} = useResponsiveLayout(props.mobileBreakpoint);
+
+// 监视响应式状态变化并触发事件
+watch(collapsed, (newValue) => {
+  emit('collapse', newValue);
 });
-const isMobile = breakpoints.smaller('mobile');
 
-// 路由
-const route = useRoute();
-
-// 计算属性 - 根据状态获取头部类名
-const getHeaderClass = computed(() => 
-  isMobile.value ? 'left-0' : (collapsed.value ? 'md:left-16' : 'md:left-60')
-);
-
-// 计算属性 - 获取主内容区的类名
-const getMainClass = computed(() => 
-  isMobile.value ? '' : (collapsed.value ? 'md:ml-16' : 'md:ml-60')
-);
+watch(isMobile, (newValue) => {
+  emit('update:mobile', newValue);
+});
 
 // 计算属性 - 折叠按钮文本
 const collapseButtonText = computed(() => 
   collapsed.value ? '展开菜单' : '收起菜单'
 );
-
-// 关闭抽屉
-const closeDrawer = () => {
-  drawerVisible.value = false;
-};
 
 // 对象化配置 - 侧边栏配置
 const sidebarConfig = computed(() => ({
@@ -266,27 +240,4 @@ const headerConfig = computed(() => ({
   showUserProfile: props.layoutConfig.showUserProfile ?? true,
   userData: props.userData
 }));
-
-// 折叠状态控制
-const toggleCollapse = () => {
-  collapsed.value = !collapsed.value;
-  emit('collapse', collapsed.value);
-};
-
-// 响应式处理
-watch(isMobile, (newIsMobile, oldIsMobile) => {
-  if (newIsMobile) {
-    wasCollapsedBeforeMobile.value = collapsed.value;
-    collapsed.value = true;
-  } else if (oldIsMobile) {
-    collapsed.value = wasCollapsedBeforeMobile.value;
-  }
-  
-  emit('update:mobile', newIsMobile);
-});
-
-// 监听路由变化关闭抽屉
-watch(() => route.path, () => {
-  drawerVisible.value = false;
-});
 </script> 

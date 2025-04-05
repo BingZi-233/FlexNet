@@ -46,7 +46,8 @@ export default defineNuxtConfig({
     // 公共配置（客户端和服务器端都可访问）
     public: {
       appwriteEndpoint: process.env.APPWRITE_ENDPOINT || '',
-      appwriteProjectId: process.env.APPWRITE_PROJECT_ID || ''
+      appwriteProjectId: process.env.APPWRITE_PROJECT_ID || '',
+      useMock: process.env.USE_MOCK === 'true'
     }
   },
   

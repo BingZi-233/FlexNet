@@ -67,11 +67,17 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref } from 'vue';
+<script setup lang="ts">
+// 定义用户数据类型
+interface UserData {
+  type: string;
+  value: number;
+  percentage: string;
+  color: string;
+}
 
 // 模拟数据
-const userData = ref([
+const userData = ref<UserData[]>([
   { type: '男性', value: 4523, percentage: '45%', color: '#165DFF' },
   { type: '女性', value: 3021, percentage: '30%', color: '#722ED1' },
   { type: '未知', value: 1302, percentage: '25%', color: '#0FC6C2' }
