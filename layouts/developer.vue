@@ -49,7 +49,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
@@ -76,6 +76,9 @@ import {
 import { getDeveloperMenu } from '~/mock/api/menu';
 import type { MenuItem } from '~/mock/data/menuConfig';
 import { useMenu } from '~/composables/useMenu';
+import { useMenuSimple } from '~/composables/useMenuSimple';
+import { useMenuWithMsw } from '~/composables/useMenuWithMsw';
+import { useMenuData } from '~/composables/useMenuData';
 
 // 路由
 const route = useRoute();
@@ -90,26 +93,29 @@ const { getInitialsAvatar } = useAppwriteAvatar();
 // 用于侧边菜单组件通信
 const collapsed = ref(false);
 
-// 菜单配置
+// 菜单配置及加载状态
 const developerMenuConfig = ref<MenuItem[]>([]);
 const menuLoading = ref(true);
+const menuHandler = ref<any>(null);
 
 // 获取菜单数据
 const fetchMenuData = async () => {
   try {
     menuLoading.value = true;
-    // 使用组合式函数获取菜单数据
-    const { menuData, loading, error } = await useMenu().fetchDeveloperMenu();
     
-    // 如果获取成功，更新菜单数据
+    // 使用符合Nuxt最佳实践的菜单获取函数
+    const { menu, loading, error } = await useMenuData().getDeveloperMenu();
+    
+    // 如果没有错误，使用菜单数据
     if (!error.value) {
-      developerMenuConfig.value = menuData.value;
+      developerMenuConfig.value = menu.value;
     } else {
       console.error('获取开发者菜单失败:', error.value);
     }
+    
+    menuLoading.value = loading.value;
   } catch (error) {
     console.error('获取开发者菜单出错:', error);
-  } finally {
     menuLoading.value = false;
   }
 };
@@ -224,7 +230,11 @@ const activeMenu = computed(() => {
   return ['1'];
 });
 
+// 监听路由变化，当路由变化时重新获取数据
+onMounted(() => {
+  fetchMenuData();
+});
+
 // 初始化
 fetchUserData();
-fetchMenuData();
 </script> 

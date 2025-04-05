@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   modules: ['arco-design-nuxt-module', '@nuxtjs/tailwindcss'],
   
   // Arco Design 配置
@@ -47,6 +47,26 @@ export default defineNuxtConfig({
     public: {
       appwriteEndpoint: process.env.APPWRITE_ENDPOINT || '',
       appwriteProjectId: process.env.APPWRITE_PROJECT_ID || ''
+    }
+  },
+  
+  // 添加MSW配置
+  nitro: {
+    publicAssets: [
+      {
+        baseURL: 'mocks',
+        dir: 'mocks/public',
+        maxAge: 60 * 60 // 1小时缓存
+      }
+    ]
+  },
+
+  // 扩展Vite配置，支持MSW
+  vite: {
+    server: {
+      fs: {
+        strict: false
+      }
     }
   }
 })

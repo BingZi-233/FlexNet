@@ -9,6 +9,6 @@ node_modules
 .idea
 .vscode
 .DS_Store
-docs
+# docs
 pnpm-lock.yaml
 tsconfig.json
