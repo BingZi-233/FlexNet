@@ -7,8 +7,53 @@
       @toggle-collapse="toggleCollapse"
     >
       <template #menu>
-        <slot name="menu"></slot>
+        <a-menu
+          :default-selected-keys="defaultSelectedKeys"
+          :default-open-keys="defaultOpenKeys"
+          :collapsed="collapsed"
+          class="border-0"
+        >
+          <template v-for="item in menuConfig" :key="item.key">
+            <!-- 使用三个独立的 template 块，每个对应一种类型 -->
+            <template v-if="item.children && item.children.length > 0">
+              <a-sub-menu :key="item.key">
+                <template #icon v-if="item.icon">
+                  <component :is="item.icon" />
+                </template>
+                <template #title>{{ item.title }}</template>
+                <template v-for="child in item.children" :key="child.key">
+                  <!-- 子菜单项也使用独立的 template -->
+                  <template v-if="child.divider">
+                    <a-divider :key="`${child.key}-divider`" style="margin: 4px 0" />
+                  </template>
+                  
+                  <template v-else>
+                    <a-menu-item :key="child.key">
+                      <nuxt-link v-if="child.route" :to="child.route">{{ child.title }}</nuxt-link>
+                      <span v-else>{{ child.title }}</span>
+                    </a-menu-item>
+                  </template>
+                </template>
+              </a-sub-menu>
+            </template>
+            
+            <template v-else-if="item.divider">
+              <a-divider :key="`${item.key}-divider`" style="margin: 4px 0" />
+            </template>
+            
+            <template v-else>
+              <a-menu-item :key="item.key">
+                <template #icon v-if="item.icon">
+                  <component :is="item.icon" />
+                </template>
+                <nuxt-link v-if="item.route" :to="item.route">{{ item.title }}</nuxt-link>
+                <span v-else>{{ item.title }}</span>
+              </a-menu-item>
+            </template>
+          </template>
+        </a-menu>
       </template>
+      
       <template #sider-footer>
         <slot name="sider-footer"></slot>
       </template>
@@ -20,8 +65,52 @@
       :config="mobileConfig"
     >
       <template #drawer-menu>
-        <slot name="drawer-menu"></slot>
+        <a-menu
+          :default-selected-keys="defaultSelectedKeys"
+          :default-open-keys="defaultOpenKeys"
+          class="border-0"
+        >
+          <template v-for="item in menuConfig" :key="item.key">
+            <!-- 使用三个独立的 template 块，每个对应一种类型 -->
+            <template v-if="item.children && item.children.length > 0">
+              <a-sub-menu :key="item.key">
+                <template #icon v-if="item.icon">
+                  <component :is="item.icon" />
+                </template>
+                <template #title>{{ item.title }}</template>
+                <template v-for="child in item.children" :key="child.key">
+                  <!-- 子菜单项也使用独立的 template -->
+                  <template v-if="child.divider">
+                    <a-divider :key="`${child.key}-divider`" style="margin: 4px 0" />
+                  </template>
+                  
+                  <template v-else>
+                    <a-menu-item :key="child.key">
+                      <nuxt-link v-if="child.route" :to="child.route" @click="closeDrawer">{{ child.title }}</nuxt-link>
+                      <span v-else>{{ child.title }}</span>
+                    </a-menu-item>
+                  </template>
+                </template>
+              </a-sub-menu>
+            </template>
+            
+            <template v-else-if="item.divider">
+              <a-divider :key="`${item.key}-divider`" style="margin: 4px 0" />
+            </template>
+            
+            <template v-else>
+              <a-menu-item :key="item.key">
+                <template #icon v-if="item.icon">
+                  <component :is="item.icon" />
+                </template>
+                <nuxt-link v-if="item.route" :to="item.route" @click="closeDrawer">{{ item.title }}</nuxt-link>
+                <span v-else>{{ item.title }}</span>
+              </a-menu-item>
+            </template>
+          </template>
+        </a-menu>
       </template>
+      
       <template #drawer-footer>
         <slot name="drawer-footer"></slot>
       </template>
@@ -67,6 +156,15 @@ interface UserData {
   [key: string]: any;
 }
 
+interface MenuItem {
+  key: string;
+  title: string;
+  icon?: any; // 直接接收图标组件
+  route?: string;
+  children?: MenuItem[];
+  divider?: boolean;
+}
+
 interface LayoutConfig {
   headerTitle: string;
   breadcrumbTitle: string;
@@ -87,9 +185,21 @@ const props = defineProps({
     type: Object as () => LayoutConfig,
     required: true
   },
+  menuConfig: {
+    type: Array as () => MenuItem[],
+    default: () => []
+  },
   defaultCollapsed: {
     type: Boolean,
     default: false
+  },
+  defaultSelectedKeys: {
+    type: Array as () => string[],
+    default: () => ['1']
+  },
+  defaultOpenKeys: {
+    type: Array as () => string[],
+    default: () => []
   },
   mobileBreakpoint: {
     type: Number,
@@ -128,6 +238,11 @@ const getMainClass = computed(() =>
 const collapseButtonText = computed(() => 
   collapsed.value ? '展开菜单' : '收起菜单'
 );
+
+// 关闭抽屉
+const closeDrawer = () => {
+  drawerVisible.value = false;
+};
 
 // 对象化配置 - 侧边栏配置
 const sidebarConfig = computed(() => ({

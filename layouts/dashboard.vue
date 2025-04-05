@@ -10,66 +10,12 @@
       showSettings: true,
       showUserProfile: true
     }"
+    :menuConfig="dashboardMenuConfig"
+    :defaultSelectedKeys="activeMenu"
+    :defaultOpenKeys="['sub1']"
     @collapse="handleLayoutCollapse"
     @update:mobile="handleMobileChange"
   >
-    <template #menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['sub1']"
-        :collapsed="collapsed"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/dashboard">仪表台</nuxt-link>
-        </a-menu-item>
-        <a-menu-item key="2">
-          <template #icon><IconUser /></template>
-          <nuxt-link to="/dashboard/users">用户管理</nuxt-link>
-        </a-menu-item>
-        <a-menu-item key="3">
-          <template #icon><IconSettings /></template>
-          <nuxt-link to="/dashboard/settings">系统设置</nuxt-link>
-        </a-menu-item>
-        <a-sub-menu key="sub1">
-          <template #icon><IconApps /></template>
-          <template #title>数据分析</template>
-          <a-menu-item key="4">数据概览</a-menu-item>
-          <a-menu-item key="5">流量分析</a-menu-item>
-          <a-menu-item key="6">用户行为</a-menu-item>
-        </a-sub-menu>
-      </a-menu>
-    </template>
-    
-    <template #drawer-menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['sub1']"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/dashboard">仪表台</nuxt-link>
-        </a-menu-item>
-        <a-menu-item key="2">
-          <template #icon><IconUser /></template>
-          <nuxt-link to="/dashboard/users">用户管理</nuxt-link>
-        </a-menu-item>
-        <a-menu-item key="3">
-          <template #icon><IconSettings /></template>
-          <nuxt-link to="/dashboard/settings">系统设置</nuxt-link>
-        </a-menu-item>
-        <a-sub-menu key="sub1">
-          <template #icon><IconApps /></template>
-          <template #title>数据分析</template>
-          <a-menu-item key="4">数据概览</a-menu-item>
-          <a-menu-item key="5">流量分析</a-menu-item>
-          <a-menu-item key="6">用户行为</a-menu-item>
-        </a-sub-menu>
-      </a-menu>
-    </template>
-    
     <template #user-dropdown>
       <a-doption @click="goTo('/dashboard/profile')">
         <template #icon><IconUser /></template>
@@ -103,12 +49,33 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
 import { UserRole } from '~/types/user';
 import DashboardLayout from '~/components/layout/DashboardLayout.vue';
+import {
+  IconDashboard,
+  IconUser,
+  IconSettings,
+  IconNotification,
+  IconEdit,
+  IconCode,
+  IconBook,
+  IconInfoCircle,
+  IconApps,
+  IconSafe,
+  IconExport,
+  IconMenu,
+  IconClose,
+  IconHistory,
+  IconFile,
+  IconImage
+} from '@arco-design/web-vue/es/icon';
+import { getDashboardMenu } from '~/mock/api/menu';
+import type { MenuItem } from '~/mock/data/menuConfig';
+import { useMenu } from '~/composables/useMenu';
 
 // 路由
 const route = useRoute();
@@ -122,6 +89,30 @@ const { getInitialsAvatar, getFavicon } = useAppwriteAvatar();
 
 // 用于侧边菜单组件通信
 const collapsed = ref(false);
+
+// 菜单配置
+const dashboardMenuConfig = ref<MenuItem[]>([]);
+const menuLoading = ref(true);
+
+// 获取菜单数据
+const fetchMenuData = async () => {
+  try {
+    menuLoading.value = true;
+    // 使用组合式函数获取菜单数据
+    const { menuData, loading, error } = await useMenu().fetchDashboardMenu();
+    
+    // 如果获取成功，更新菜单数据
+    if (!error.value) {
+      dashboardMenuConfig.value = menuData.value;
+    } else {
+      console.error('获取用户仪表盘菜单失败:', error.value);
+    }
+  } catch (error) {
+    console.error('获取用户仪表盘菜单出错:', error);
+  } finally {
+    menuLoading.value = false;
+  }
+};
 
 // 监听DashboardLayout的收起/展开事件
 const handleLayoutCollapse = (isCollapsed: boolean) => {
@@ -223,4 +214,5 @@ const activeMenu = computed(() => {
 
 // 初始化
 fetchUserData();
+fetchMenuData();
 </script> 

@@ -10,146 +10,13 @@
       showSettings: true,
       showUserProfile: true
     }"
+    :menuConfig="adminMenuConfig"
+    :defaultSelectedKeys="activeMenu"
+    :defaultOpenKeys="['system', 'users', 'content']"
     @collapse="handleLayoutCollapse"
     @update:mobile="handleMobileChange"
   >
-    <template #menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['system', 'users', 'content']"
-        :collapsed="collapsed"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/admin">控制面板</nuxt-link>
-        </a-menu-item>
-        
-        <a-sub-menu key="users">
-          <template #icon><IconUser /></template>
-          <template #title>用户管理</template>
-          <a-menu-item key="2">
-            <nuxt-link to="/admin/users/list">用户列表</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="3">
-            <nuxt-link to="/admin/users/roles">角色权限</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="4">
-            <nuxt-link to="/admin/users/activity">用户活动</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="content">
-          <template #icon><IconEdit /></template>
-          <template #title>内容管理</template>
-          <a-menu-item key="5">
-            <nuxt-link to="/admin/content/pages">页面管理</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="6">
-            <nuxt-link to="/admin/content/blogs">博客文章</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="7">
-            <nuxt-link to="/admin/content/media">媒体库</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="system">
-          <template #icon><IconSettings /></template>
-          <template #title>系统设置</template>
-          <a-menu-item key="8">
-            <nuxt-link to="/admin/system/general">通用设置</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="9">
-            <nuxt-link to="/admin/system/security">安全设置</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="10">
-            <nuxt-link to="/admin/system/logs">系统日志</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="11">
-            <nuxt-link to="/admin/system/backups">备份恢复</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-menu-item key="12">
-          <template #icon><IconNotification /></template>
-          <nuxt-link to="/admin/notifications">消息通知</nuxt-link>
-        </a-menu-item>
-        
-        <a-menu-item key="13">
-          <template #icon><IconSafe /></template>
-          <nuxt-link to="/admin/security">安全中心</nuxt-link>
-        </a-menu-item>
-      </a-menu>
-    </template>
-    
-    <template #drawer-menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['system', 'users', 'content']"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/admin">控制面板</nuxt-link>
-        </a-menu-item>
-        
-        <a-sub-menu key="users">
-          <template #icon><IconUser /></template>
-          <template #title>用户管理</template>
-          <a-menu-item key="2">
-            <nuxt-link to="/admin/users/list">用户列表</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="3">
-            <nuxt-link to="/admin/users/roles">角色权限</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="4">
-            <nuxt-link to="/admin/users/activity">用户活动</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="content">
-          <template #icon><IconEdit /></template>
-          <template #title>内容管理</template>
-          <a-menu-item key="5">
-            <nuxt-link to="/admin/content/pages">页面管理</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="6">
-            <nuxt-link to="/admin/content/blogs">博客文章</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="7">
-            <nuxt-link to="/admin/content/media">媒体库</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="system">
-          <template #icon><IconSettings /></template>
-          <template #title>系统设置</template>
-          <a-menu-item key="8">
-            <nuxt-link to="/admin/system/general">通用设置</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="9">
-            <nuxt-link to="/admin/system/security">安全设置</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="10">
-            <nuxt-link to="/admin/system/logs">系统日志</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="11">
-            <nuxt-link to="/admin/system/backups">备份恢复</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-menu-item key="12">
-          <template #icon><IconNotification /></template>
-          <nuxt-link to="/admin/notifications">消息通知</nuxt-link>
-        </a-menu-item>
-        
-        <a-menu-item key="13">
-          <template #icon><IconSafe /></template>
-          <nuxt-link to="/admin/security">安全中心</nuxt-link>
-        </a-menu-item>
-      </a-menu>
-    </template>
-    
+    <!-- 用户下拉菜单选项，现在使用插槽 -->
     <template #user-dropdown>
       <a-doption @click="goTo('/admin/profile')">
         <template #icon><IconUser /></template>
@@ -183,12 +50,33 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
 import { UserRole } from '~/types/user';
 import DashboardLayout from '~/components/layout/DashboardLayout.vue';
+import {
+  IconDashboard,
+  IconUser,
+  IconSettings,
+  IconNotification,
+  IconEdit,
+  IconCode,
+  IconBook,
+  IconInfoCircle,
+  IconApps,
+  IconSafe,
+  IconExport,
+  IconMenu,
+  IconClose,
+  IconHistory,
+  IconFile,
+  IconImage
+} from '@arco-design/web-vue/es/icon';
+import { getAdminMenu } from '~/mock/api/menu';
+import type { MenuItem } from '~/mock/data/menuConfig';
+import { useMenu } from '~/composables/useMenu';
 
 // 路由
 const route = useRoute();
@@ -202,6 +90,30 @@ const { getInitialsAvatar, getFavicon } = useAppwriteAvatar();
 
 // 用于侧边菜单组件通信
 const collapsed = ref(false);
+
+// 菜单配置
+const adminMenuConfig = ref<MenuItem[]>([]);
+const menuLoading = ref(true);
+
+// 获取菜单数据
+const fetchMenuData = async () => {
+  try {
+    menuLoading.value = true;
+    // 使用组合式函数获取菜单数据
+    const { menuData, loading, error } = await useMenu().fetchAdminMenu();
+    
+    // 如果获取成功，更新菜单数据
+    if (!error.value) {
+      adminMenuConfig.value = menuData.value;
+    } else {
+      console.error('获取管理员菜单失败:', error.value);
+    }
+  } catch (error) {
+    console.error('获取管理员菜单出错:', error);
+  } finally {
+    menuLoading.value = false;
+  }
+};
 
 // 用户数据
 const userData = ref<{
@@ -321,4 +233,5 @@ const handleMobileChange = (isMobile: boolean) => {
 
 // 初始化
 fetchUserData();
+fetchMenuData();
 </script> 

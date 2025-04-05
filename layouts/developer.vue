@@ -10,112 +10,12 @@
       showSettings: true,
       showUserProfile: true
     }"
+    :menuConfig="developerMenuConfig"
+    :defaultSelectedKeys="activeMenu"
+    :defaultOpenKeys="['api', 'docs']"
     @collapse="handleLayoutCollapse"
     @update:mobile="handleMobileChange"
   >
-    <template #menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['api', 'docs']"
-        :collapsed="collapsed"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/developer">开发者中心</nuxt-link>
-        </a-menu-item>
-        
-        <a-sub-menu key="api">
-          <template #icon><IconCode /></template>
-          <template #title>API 管理</template>
-          <a-menu-item key="2">
-            <nuxt-link to="/developer/api/keys">API 密钥</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="3">
-            <nuxt-link to="/developer/api/endpoints">API 端点</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="4">
-            <nuxt-link to="/developer/api/logs">请求日志</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="docs">
-          <template #icon><IconBook /></template>
-          <template #title>技术文档</template>
-          <a-menu-item key="5">
-            <nuxt-link to="/developer/docs/reference">API 文档</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="6">
-            <nuxt-link to="/developer/docs/guides">开发指南</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="7">
-            <nuxt-link to="/developer/docs/examples">示例代码</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-menu-item key="8">
-          <template #icon><IconSettings /></template>
-          <nuxt-link to="/developer/settings">开发设置</nuxt-link>
-        </a-menu-item>
-        
-        <a-menu-item key="9">
-          <template #icon><IconInfoCircle /></template>
-          <nuxt-link to="/developer/support">技术支持</nuxt-link>
-        </a-menu-item>
-      </a-menu>
-    </template>
-    
-    <template #drawer-menu>
-      <a-menu
-        :default-selected-keys="activeMenu"
-        :default-open-keys="['api', 'docs']"
-        class="border-0"
-      >
-        <a-menu-item key="1">
-          <template #icon><IconDashboard /></template>
-          <nuxt-link to="/developer">开发者中心</nuxt-link>
-        </a-menu-item>
-        
-        <a-sub-menu key="api">
-          <template #icon><IconCode /></template>
-          <template #title>API 管理</template>
-          <a-menu-item key="2">
-            <nuxt-link to="/developer/api/keys">API 密钥</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="3">
-            <nuxt-link to="/developer/api/endpoints">API 端点</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="4">
-            <nuxt-link to="/developer/api/logs">请求日志</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="docs">
-          <template #icon><IconBook /></template>
-          <template #title>技术文档</template>
-          <a-menu-item key="5">
-            <nuxt-link to="/developer/docs/reference">API 文档</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="6">
-            <nuxt-link to="/developer/docs/guides">开发指南</nuxt-link>
-          </a-menu-item>
-          <a-menu-item key="7">
-            <nuxt-link to="/developer/docs/examples">示例代码</nuxt-link>
-          </a-menu-item>
-        </a-sub-menu>
-        
-        <a-menu-item key="8">
-          <template #icon><IconSettings /></template>
-          <nuxt-link to="/developer/settings">开发设置</nuxt-link>
-        </a-menu-item>
-        
-        <a-menu-item key="9">
-          <template #icon><IconInfoCircle /></template>
-          <nuxt-link to="/developer/support">技术支持</nuxt-link>
-        </a-menu-item>
-      </a-menu>
-    </template>
-    
     <template #user-dropdown>
       <a-doption @click="goTo('/developer/profile')">
         <template #icon><IconUser /></template>
@@ -149,12 +49,33 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
 import { UserRole } from '~/types/user';
 import DashboardLayout from '~/components/layout/DashboardLayout.vue';
+import {
+  IconDashboard,
+  IconUser,
+  IconSettings,
+  IconNotification,
+  IconEdit,
+  IconCode,
+  IconBook,
+  IconInfoCircle,
+  IconApps,
+  IconSafe,
+  IconExport,
+  IconMenu,
+  IconClose,
+  IconHistory,
+  IconFile,
+  IconImage
+} from '@arco-design/web-vue/es/icon';
+import { getDeveloperMenu } from '~/mock/api/menu';
+import type { MenuItem } from '~/mock/data/menuConfig';
+import { useMenu } from '~/composables/useMenu';
 
 // 路由
 const route = useRoute();
@@ -168,6 +89,30 @@ const { getInitialsAvatar } = useAppwriteAvatar();
 
 // 用于侧边菜单组件通信
 const collapsed = ref(false);
+
+// 菜单配置
+const developerMenuConfig = ref<MenuItem[]>([]);
+const menuLoading = ref(true);
+
+// 获取菜单数据
+const fetchMenuData = async () => {
+  try {
+    menuLoading.value = true;
+    // 使用组合式函数获取菜单数据
+    const { menuData, loading, error } = await useMenu().fetchDeveloperMenu();
+    
+    // 如果获取成功，更新菜单数据
+    if (!error.value) {
+      developerMenuConfig.value = menuData.value;
+    } else {
+      console.error('获取开发者菜单失败:', error.value);
+    }
+  } catch (error) {
+    console.error('获取开发者菜单出错:', error);
+  } finally {
+    menuLoading.value = false;
+  }
+};
 
 // 监听DashboardLayout的收起/展开事件
 const handleLayoutCollapse = (isCollapsed: boolean) => {
@@ -230,6 +175,9 @@ const fetchUserData = async () => {
   }
 };
 
+// 开发者菜单配置
+// ... existing code ...
+
 // 路由导航函数
 const goTo = (path: string) => {
   router.push(path);
@@ -278,4 +226,5 @@ const activeMenu = computed(() => {
 
 // 初始化
 fetchUserData();
+fetchMenuData();
 </script> 
