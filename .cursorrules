@@ -4,6 +4,7 @@
 - 项目基于 Nuxt 3，使用 TypeScript 和 Arco Design UI 框架
 - 请遵循 Vue 3 和 Nuxt 3 的最佳实践
 - 项目使用 pnpm 进行依赖管理
+- 兼容日期设置为 '2024-11-01'，确保使用最新的 Nuxt 功能
 
 ## 技术栈
 
@@ -25,16 +26,30 @@
 ## 架构设计规范
 
 1. **Nuxt 项目结构**：
-   - `pages/`: 所有路由页面
-   - `components/`: 可复用组件
-   - `layouts/`: 页面布局
-   - `composables/`: 组合式函数
-   - `server/`: 服务器端 API 路由
-   - `utils/`: 工具函数
+   - `.nuxt/`: Nuxt 自动生成的构建文件（不要手动修改）
+   - `.output/`: 构建输出目录，包含部署所需的所有文件
+   - `assets/`: 未编译的静态资源，如 SCSS、LESS、JS
+   - `components/`: 可复用组件，支持自动导入
+   - `composables/`: 组合式函数，支持自动导入
+   - `content/`: 支持内容管理系统（Nuxt Content 模块）的内容
+   - `layouts/`: 页面布局组件
    - `middleware/`: 路由中间件
-   - `plugins/`: Vue 插件
-   - `stores/`: 状态管理
-   - `public/`: 静态资源
+   - `modules/`: 自定义 Nuxt 模块
+   - `pages/`: 所有路由页面（基于文件的路由系统）
+   - `plugins/`: 在应用启动前注册的 Vue 插件
+   - `public/`: 直接提供给客户端的静态资源
+   - `server/`: 服务器端 API 路由、中间件和服务器端逻辑
+   - `utils/`: 工具函数
+   - `stores/`: 状态管理（如 Pinia 存储）
+   - `types/`: TypeScript 类型定义
+   - `.env`: 环境变量文件
+   - `.gitignore`: Git 忽略文件
+   - `.nuxtignore`: Nuxt 忽略文件
+   - `app.vue`: 应用的主入口组件
+   - `app.config.ts`: 应用运行时的配置
+   - `nuxt.config.ts`: Nuxt 应用的主要配置文件
+   - `tsconfig.json`: TypeScript 配置文件
+   - `package.json`: 项目依赖和脚本
 
 2. **开发原则**：
    - 遵循组件化开发原则
@@ -43,6 +58,9 @@
    - 保持代码简洁清晰
    - 优先使用异步组件提高性能
    - 使用 SSR 友好的代码
+   - 利用 Nuxt 的自动导入功能
+   - 使用模块化结构组织代码
+   - 遵循最少知识原则（组件只关注自己的职责）
 
 ## 代码实现规范
 
@@ -51,10 +69,11 @@
 - 组件名使用 PascalCase 命名
 - 组件文件名与组件名保持一致
 - 使用 defineProps 和 defineEmits 定义属性和事件
+- 利用 Nuxt 的自动导入功能（无需手动导入 Vue API 和 Nuxt 组合式函数）
 - 示例：
   ```vue
   <script setup lang="ts">
-  import { ref } from 'vue'
+  // 无需导入 ref，Nuxt 自动导入
   
   // Props 定义
   const props = defineProps<{
@@ -97,29 +116,34 @@
 - 文件名使用 kebab-case
 - 嵌套路由使用目录结构
 - 动态路由使用方括号命名：`[id].vue`
+- 捕获所有路由使用 `[...slug].vue`
+- 支持路由中间件：`middleware/auth.ts`
+- 支持布局：`definePageMeta({ layout: 'custom' })`
+- 支持验证：`definePageMeta({ validate: () => {...} })`
 - 示例：
   ```
   pages/
-  ├── index.vue               # 首页
-  ├── about.vue               # 关于页面
+  ├── index.vue               # 首页 (/
+  ├── about.vue               # 关于页面 (/about)
   ├── users/
-  │   ├── index.vue           # 用户列表页
-  │   └── [id].vue            # 用户详情页
-  └── posts/
-      ├── index.vue           # 文章列表
-      ├── [id].vue            # 文章详情
-      └── [id]/comments.vue   # 文章评论
+  │   ├── index.vue           # 用户列表页 (/users)
+  │   └── [id].vue            # 用户详情页 (/users/:id)
+  ├── posts/
+  │   ├── index.vue           # 文章列表 (/posts)
+  │   ├── [id].vue            # 文章详情 (/posts/:id)
+  │   └── [id]/comments.vue   # 文章评论 (/posts/:id/comments)
+  └── [...slug].vue           # 捕获所有路由 (404页面)
   ```
 
 ### 组合式函数规范
 - 文件放置在 `composables/` 目录
 - 文件名使用 camelCase 并加前缀 `use`
 - 导出函数也使用 `use` 前缀
+- 支持自动导入，无需显式导入
+- 封装特定领域逻辑，促进代码复用
 - 示例：
   ```ts
   // composables/useCounter.ts
-  import { ref } from 'vue'
-  
   export function useCounter(initialValue = 0) {
     const count = ref(initialValue)
     
@@ -137,6 +161,11 @@
       decrement
     }
   }
+  
+  // 在组件中使用，无需导入
+  // <script setup>
+  // const { count, increment } = useCounter(10)
+  // </script>
   ```
 
 ### 类型定义规范
@@ -144,6 +173,8 @@
 - 每个模块的类型应该放在单独的文件中
 - 类型名使用 PascalCase
 - 接口名前缀使用 `I`
+- 在类型文件中导出所有类型
+- 善用 TypeScript 工具类型
 - 示例：
   ```ts
   // types/user.ts
@@ -162,23 +193,60 @@
   }
   
   export type UserWithoutEmail = Omit<IUser, 'email'>
+  
+  // 定义服务实例类型
+  export interface AppwriteServerInstance {
+    client: Client
+    account: Account
+    databases: Databases
+    storage: Storage
+    teams: Teams
+    functions: Functions
+  }
   ```
 
 ### API 调用规范
 - 服务器 API 放置在 `server/api/` 目录
 - 使用 Nuxt 的 `useFetch` 或 `useAsyncData` 获取数据
 - API 路由应该遵循 RESTful 设计
+- 使用 Nitro 事件处理程序
+- 善用 API 路由中间件
+- 支持数据验证和错误处理
 - 示例：
   ```ts
   // 在组件中使用
-  const { data, pending, error, refresh } = await useFetch('/api/users')
+  const { data, pending, error, refresh } = await useFetch('/api/users', {
+    // 支持请求选项
+    method: 'GET',
+    // 支持键管理缓存
+    key: 'users-list',
+    // 支持数据转换
+    transform: (data) => data.users,
+    // 支持缓存策略
+    cache: process.dev ? 'no-cache' : undefined
+  })
   
   // 服务器 API 定义 (server/api/users.ts)
   export default defineEventHandler(async (event) => {
+    // 获取查询参数
+    const query = getQuery(event)
+    
+    // 访问请求体
+    const body = await readBody(event)
+    
     // 处理请求并返回数据
     return {
       users: [/* 用户数据 */]
     }
+  })
+  
+  // 支持API路由参数 (server/api/users/[id].get.ts)
+  export default defineEventHandler(async (event) => {
+    // 获取路由参数
+    const { id } = event.context.params
+    
+    // 返回指定用户
+    return { /* 用户数据 */ }
   })
   ```
 
@@ -186,6 +254,7 @@
 - 使用前缀 `A` 访问 Arco 组件
 - 推荐样式导入方式：CSS
 - 按需导入图标
+- 使用 Nuxt 配置的 Arco Design 集成
 - 示例：
   ```vue
   <template>
@@ -197,24 +266,54 @@
       <AFooter>Footer</AFooter>
     </ALayout>
   </template>
+
+  <script setup lang="ts">
+  // 使用 Message 功能组件（已通过nuxt.config.ts注册）
+  function showMessage() {
+    Message.success('操作成功！')
+  }
+  </script>
   ```
 
 ### 异常处理规范
 - 使用 try/catch 捕获异常
 - 处理 API 请求错误并提供用户反馈
 - 使用 Arco Design 的 Message 或 Notification 提示错误
+- 实现全局错误处理
+- 使用 Nuxt 的错误页面
 - 示例：
   ```ts
   try {
     const result = await useFetch('/api/users')
     if (result.error.value) {
-      throw new Error(result.error.value.message)
+      throw createError({
+        statusCode: result.error.value.statusCode || 500,
+        message: result.error.value.message
+      })
     }
     return result.data.value
   } catch (error) {
     Message.error(`获取用户列表失败: ${error.message}`)
     return []
   }
+  
+  // 创建全局错误处理器 (plugins/error-handler.ts)
+  export default defineNuxtPlugin({
+    name: 'error-handler',
+    setup() {
+      const nuxtApp = useNuxtApp()
+      
+      nuxtApp.hook('vue:error', (err) => {
+        console.error('Vue 错误:', err)
+        Message.error('应用发生错误，请稍后再试')
+      })
+      
+      nuxtApp.hook('app:error', (err) => {
+        console.error('应用错误:', err)
+        // 处理应用级错误
+      })
+    }
+  })
   ```
 
 ## 配置管理规范
@@ -224,15 +323,19 @@
 - 示例环境变量文件 `.env.example`
 - 敏感配置不要提交到仓库
 - 使用 `runtimeConfig` 访问环境变量
+- 支持环境特定配置（`.env.development`, `.env.production`）
 - 示例：
   ```ts
   // nuxt.config.ts 中定义
   export default defineNuxtConfig({
     runtimeConfig: {
-      appwriteApiKey: process.env.APPWRITE_API_KEY,
+      // 私有配置（仅在服务器端可访问）
+      appwriteApiKey: process.env.APPWRITE_API_KEY || '',
+      // 公共配置（客户端和服务器端都可访问）
       public: {
-        appwriteEndpoint: process.env.APPWRITE_ENDPOINT,
-        appwriteProjectId: process.env.APPWRITE_PROJECT_ID
+        appwriteEndpoint: process.env.APPWRITE_ENDPOINT || '',
+        appwriteProjectId: process.env.APPWRITE_PROJECT_ID || '',
+        appwriteStorageBucketId: process.env.APPWRITE_STORAGE_BUCKET_ID || ''
       }
     }
   })
@@ -246,9 +349,17 @@
 - 所有 Nuxt 配置集中在 `nuxt.config.ts`
 - 模块和插件配置放在各自区域
 - 不同环境使用不同配置
+- 保持配置结构清晰
+- 使用兼容性日期确保功能稳定性
 - 示例：
   ```ts
   export default defineNuxtConfig({
+    // 兼容性日期，确保使用最新的Nuxt功能
+    compatibilityDate: '2024-11-01',
+    
+    // 开发工具配置
+    devtools: { enabled: false },
+    
     // 模块配置
     modules: ['arco-design-nuxt-module', '@nuxtjs/tailwindcss'],
     
@@ -256,18 +367,53 @@
     arco: {
       componentPrefix: 'A',
       importStyle: 'css',
-      icons: ['IconUser', 'IconSettings']
+      icons: ['*'],  // 导入所有图标
+      imports: ['Message', 'Notification']  // 导入功能组件
     },
     
     // 应用配置
     app: {
       pageTransition: { name: 'page', mode: 'out-in' },
+      layoutTransition: { name: 'layout', mode: 'out-in' },
       head: {
-        title: 'My Nuxt App',
-        meta: [{ name: 'description', content: 'My amazing Nuxt application' }]
+        link: [
+          { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+        ]
+      }
+    },
+    
+    // 实验性功能
+    experimental: {
+      // 启用JSON负载渲染，支持自定义类型序列化
+      renderJsonPayloads: true
+    }
+  })
+  ```
+
+### 应用配置规范
+- 使用 `app.config.ts` 进行运行时应用配置
+- 可在客户端访问但不包含敏感信息
+- 提供默认值和类型定义
+- 示例：
+  ```ts
+  // app.config.ts
+  export default defineAppConfig({
+    title: 'FlexNet 应用',
+    theme: {
+      primaryColor: '#165DFF',
+      darkMode: false
+    },
+    ui: {
+      notification: {
+        position: 'top-right',
+        duration: 3000
       }
     }
   })
+  
+  // 在组件中使用
+  const appConfig = useAppConfig()
+  console.log(appConfig.title)
   ```
 
 ## 性能优化规范
@@ -277,43 +423,97 @@
    - 图片懒加载
    - 使用合适的图片格式（WebP, AVIF）
    - CSS 和 JS 代码分割
+   - 使用 Nuxt 的内置资源优化功能
+   - 图片采用 `<nuxt-img>` 组件优化
 
 2. **渲染优化**：
    - 使用 `<ClientOnly>` 包装仅客户端渲染的组件
    - 避免大型组件，拆分为更小的组件
    - 使用 `<Suspense>` 处理异步组件
    - 大列表使用虚拟滚动（如：vue-virtual-scroller）
+   - 适当使用 `<NuxtPage keepalive />` 缓存页面
+   - 使用 `shallowRef` 减少大数据集的响应式开销
 
 3. **数据获取优化**：
    - 使用 `useAsyncData` 和 `useFetch` 的缓存功能
+   - 配置 `key` 参数以控制缓存
+   - 使用 `transform` 函数减少传输数据量
    - 避免重复请求相同数据
    - 合理设置数据刷新策略
+   - 使用 `server` 选项在服务端预取数据
+   - 启用 `staleWhileRevalidate` 策略提高用户体验
 
 ## Appwrite 使用规范
 
 1. **实例化 Appwrite**：
    ```ts
-   import { Client, Account, Databases } from 'appwrite'
+   // plugins/appwrite.client.ts
+   import { Client, Account, Databases, Storage, Teams } from 'appwrite';
    
-   export const useAppwrite = () => {
-     const config = useRuntimeConfig()
-     
-     const client = new Client()
-       .setEndpoint(config.public.appwriteEndpoint)
-       .setProject(config.public.appwriteProjectId)
-     
-     const account = new Account(client)
-     const databases = new Databases(client)
-     
-     return {
-       client,
-       account,
-       databases
+   export default defineNuxtPlugin({
+     name: 'appwrite',
+     setup() {
+       const config = useRuntimeConfig();
+       
+       const client = new Client()
+         .setEndpoint(config.public.appwriteEndpoint)
+         .setProject(config.public.appwriteProjectId);
+       
+       const account = new Account(client);
+       const databases = new Databases(client);
+       const storage = new Storage(client);
+       const teams = new Teams(client);
+       
+       return {
+         provide: {
+           appwrite: {
+             client,
+             account,
+             databases,
+             storage,
+             teams
+           }
+         }
+       };
      }
-   }
+   });
    ```
 
 2. **数据操作**：
    - 使用 composables 封装 Appwrite 操作
    - 使用类型定义增强类型安全
    - 处理 Appwrite 错误并提供用户反馈
+   - 实现服务端和客户端的适当分离
+   - 示例：
+   ```ts
+   // composables/useAppwriteUser.ts
+   export const useAppwriteUser = () => {
+     const { $appwrite } = useNuxtApp();
+     const user = useState('user', () => null);
+     const loading = ref(false);
+     const error = ref(null);
+     
+     const getUser = async () => {
+       loading.value = true;
+       error.value = null;
+       
+       try {
+         const account = await $appwrite.account.get();
+         user.value = account;
+         return account;
+       } catch (err) {
+         error.value = err;
+         user.value = null;
+       } finally {
+         loading.value = false;
+       }
+     };
+     
+     return {
+       user,
+       loading,
+       error,
+       getUser
+     };
+   };
+   ```
