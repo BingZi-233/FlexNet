@@ -12,8 +12,11 @@
   "dependencies": {
     "@arco-design/web-vue": ">=2",
     "@nuxtjs/tailwindcss": "6.13.2",
+    "@types/lodash-es": "^4.17.12",
+    "@vueuse/core": "^13.0.0",
     "appwrite": "^17.0.1",
     "arco-design-nuxt-module": "0.2.1",
+    "lodash-es": "^4.17.21",
     "node-appwrite": "^15.0.1",
     "nuxt": "^3.16.2",
     "vue": "^3.5.13",

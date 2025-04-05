@@ -1,253 +1,319 @@
-# Nuxt.js 项目规范
+# Nuxt.js 开发规范
 
-## 目录结构
+## 重要说明
+- 项目基于 Nuxt 3，使用 TypeScript 和 Arco Design UI 框架
+- 请遵循 Vue 3 和 Nuxt 3 的最佳实践
+- 项目使用 pnpm 进行依赖管理
 
-- **pages/**: 基于文件系统的路由
-- **components/**: Vue 组件
-- **layouts/**: 应用布局模板
-- **middleware/**: 路由中间件
-- **plugins/**: 插件文件
-- **composables/**: 可组合函数
-- **utils/**: 工具函数
-- **assets/**: 未编译的静态资源
-- **public/**: 静态文件直接提供给客户端
-- **content/**: 用于内容管理
-- **server/**: 服务器路由和API
-- **.nuxt/**: Nuxt开发时生成的文件（不要修改）
-- **.output/**: 构建输出目录
-- **error.vue**: 自定义错误页面
-- **app.vue**: 应用程序的主组件
-- **app.config.ts**: 应用程序运行时配置
+## 技术栈
 
-## 框架选择
+1. **核心技术**：
+   - 基础框架：`Nuxt 3.16+`
+   - UI 框架：`Arco Design Vue`
+   - CSS 框架：`Tailwind CSS`
+   - 状态管理：`VueUse` 和 Nuxt 内置的 `useState`
+   - 后端服务：`Appwrite`
+   - 工具库：
+     - `lodash-es`
+     - `vueuse/core`
 
-### UI框架
-- 使用 arco-design-nuxt-module 作为主要UI组件库
-- 组件命名遵循 Arco Design 规范
-- 尽量使用 Arco Design 提供的图标系统
-- 自定义主题时使用 Arco Design 提供的变量系统
+2. **开发环境**：
+   - 包管理器：`pnpm`
+   - 代码提交：使用 Git 进行版本控制
+   - 编码规范：UTF-8 编码
 
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  modules: ['@arco-design/nuxt-module'],
-  arco: {
-    // 按需导入
-    importStyle: true,
-    // 自动导入组件
-    autoImport: true
+## 架构设计规范
+
+1. **Nuxt 项目结构**：
+   - `pages/`: 所有路由页面
+   - `components/`: 可复用组件
+   - `layouts/`: 页面布局
+   - `composables/`: 组合式函数
+   - `server/`: 服务器端 API 路由
+   - `utils/`: 工具函数
+   - `middleware/`: 路由中间件
+   - `plugins/`: Vue 插件
+   - `stores/`: 状态管理
+   - `public/`: 静态资源
+
+2. **开发原则**：
+   - 遵循组件化开发原则
+   - 使用组合式 API (Composition API)
+   - 遵循 TypeScript 类型定义
+   - 保持代码简洁清晰
+   - 优先使用异步组件提高性能
+   - 使用 SSR 友好的代码
+
+## 代码实现规范
+
+### 组件规范
+- 使用 `<script setup lang="ts">` 风格
+- 组件名使用 PascalCase 命名
+- 组件文件名与组件名保持一致
+- 使用 defineProps 和 defineEmits 定义属性和事件
+- 示例：
+  ```vue
+  <script setup lang="ts">
+  import { ref } from 'vue'
+  
+  // Props 定义
+  const props = defineProps<{
+    title: string
+    items?: string[]
+  }>()
+  
+  // Emits 定义
+  const emit = defineEmits<{
+    (e: 'update', value: string): void
+    (e: 'delete'): void
+  }>()
+  
+  // 响应式状态
+  const count = ref(0)
+  
+  // 方法
+  function increment() {
+    count.value++
+    emit('update', count.value.toString())
   }
-})
-```
+  </script>
+  
+  <template>
+    <div>
+      <h2>{{ title }}</h2>
+      <p>Count: {{ count }}</p>
+      <button @click="increment">Increment</button>
+      <ul v-if="items?.length">
+        <li v-for="(item, index) in items" :key="index">
+          {{ item }}
+        </li>
+      </ul>
+    </div>
+  </template>
+  ```
 
-### CSS框架
-- 使用 tailwindcss 作为CSS工具库
-- 遵循功能类优先(utility-first)的设计理念
-- 通过 tailwind.config.js 自定义项目风格
-- 合理使用 @apply 指令复用常用样式组合
-- 配置 Tailwind 与 Arco Design 的主题变量保持一致
+### 路由页面规范
+- 文件放置在 `pages/` 目录
+- 文件名使用 kebab-case
+- 嵌套路由使用目录结构
+- 动态路由使用方括号命名：`[id].vue`
+- 示例：
+  ```
+  pages/
+  ├── index.vue               # 首页
+  ├── about.vue               # 关于页面
+  ├── users/
+  │   ├── index.vue           # 用户列表页
+  │   └── [id].vue            # 用户详情页
+  └── posts/
+      ├── index.vue           # 文章列表
+      ├── [id].vue            # 文章详情
+      └── [id]/comments.vue   # 文章评论
+  ```
 
-```ts
-// tailwind.config.js
-module.exports = {
-  content: [
-    './components/**/*.{js,vue,ts}',
-    './layouts/**/*.vue',
-    './pages/**/*.vue',
-    './plugins/**/*.{js,ts}',
-    './app.vue',
-    './error.vue'
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: 'var(--primary-color)',
-        secondary: 'var(--secondary-color)'
+### 组合式函数规范
+- 文件放置在 `composables/` 目录
+- 文件名使用 camelCase 并加前缀 `use`
+- 导出函数也使用 `use` 前缀
+- 示例：
+  ```ts
+  // composables/useCounter.ts
+  import { ref } from 'vue'
+  
+  export function useCounter(initialValue = 0) {
+    const count = ref(initialValue)
+    
+    function increment() {
+      count.value++
+    }
+    
+    function decrement() {
+      count.value--
+    }
+    
+    return {
+      count,
+      increment,
+      decrement
+    }
+  }
+  ```
+
+### 类型定义规范
+- 类型定义放置在 `types/` 目录
+- 每个模块的类型应该放在单独的文件中
+- 类型名使用 PascalCase
+- 接口名前缀使用 `I`
+- 示例：
+  ```ts
+  // types/user.ts
+  export interface IUser {
+    id: string
+    username: string
+    email: string
+    createdAt: Date
+    role: UserRole
+  }
+  
+  export enum UserRole {
+    ADMIN = 'admin',
+    USER = 'user',
+    GUEST = 'guest'
+  }
+  
+  export type UserWithoutEmail = Omit<IUser, 'email'>
+  ```
+
+### API 调用规范
+- 服务器 API 放置在 `server/api/` 目录
+- 使用 Nuxt 的 `useFetch` 或 `useAsyncData` 获取数据
+- API 路由应该遵循 RESTful 设计
+- 示例：
+  ```ts
+  // 在组件中使用
+  const { data, pending, error, refresh } = await useFetch('/api/users')
+  
+  // 服务器 API 定义 (server/api/users.ts)
+  export default defineEventHandler(async (event) => {
+    // 处理请求并返回数据
+    return {
+      users: [/* 用户数据 */]
+    }
+  })
+  ```
+
+### Arco Design UI 规范
+- 使用前缀 `A` 访问 Arco 组件
+- 推荐样式导入方式：CSS
+- 按需导入图标
+- 示例：
+  ```vue
+  <template>
+    <ALayout>
+      <AHeader>Header</AHeader>
+      <AContent>
+        <ATable :columns="columns" :data="data" />
+      </AContent>
+      <AFooter>Footer</AFooter>
+    </ALayout>
+  </template>
+  ```
+
+### 异常处理规范
+- 使用 try/catch 捕获异常
+- 处理 API 请求错误并提供用户反馈
+- 使用 Arco Design 的 Message 或 Notification 提示错误
+- 示例：
+  ```ts
+  try {
+    const result = await useFetch('/api/users')
+    if (result.error.value) {
+      throw new Error(result.error.value.message)
+    }
+    return result.data.value
+  } catch (error) {
+    Message.error(`获取用户列表失败: ${error.message}`)
+    return []
+  }
+  ```
+
+## 配置管理规范
+
+### 环境变量规范
+- 项目根目录使用 `.env` 文件
+- 示例环境变量文件 `.env.example`
+- 敏感配置不要提交到仓库
+- 使用 `runtimeConfig` 访问环境变量
+- 示例：
+  ```ts
+  // nuxt.config.ts 中定义
+  export default defineNuxtConfig({
+    runtimeConfig: {
+      appwriteApiKey: process.env.APPWRITE_API_KEY,
+      public: {
+        appwriteEndpoint: process.env.APPWRITE_ENDPOINT,
+        appwriteProjectId: process.env.APPWRITE_PROJECT_ID
       }
     }
-  },
-  plugins: []
-}
-```
+  })
+  
+  // 组件中使用
+  const config = useRuntimeConfig()
+  console.log(config.public.appwriteEndpoint)
+  ```
 
-## 代码风格
+### Nuxt 配置规范
+- 所有 Nuxt 配置集中在 `nuxt.config.ts`
+- 模块和插件配置放在各自区域
+- 不同环境使用不同配置
+- 示例：
+  ```ts
+  export default defineNuxtConfig({
+    // 模块配置
+    modules: ['arco-design-nuxt-module', '@nuxtjs/tailwindcss'],
+    
+    // Arco Design 配置
+    arco: {
+      componentPrefix: 'A',
+      importStyle: 'css',
+      icons: ['IconUser', 'IconSettings']
+    },
+    
+    // 应用配置
+    app: {
+      pageTransition: { name: 'page', mode: 'out-in' },
+      head: {
+        title: 'My Nuxt App',
+        meta: [{ name: 'description', content: 'My amazing Nuxt application' }]
+      }
+    }
+  })
+  ```
 
-### 组件命名
-- 组件文件名使用 PascalCase（如 `MyComponent.vue`）
-- 页面文件可使用 kebab-case（如 `about-page.vue`）
+## 性能优化规范
 
-### 代码格式化和检查
-- 使用 ESLint 进行代码检查和格式化
-- 推荐使用 `npx nuxi module add eslint` 安装ESLint模块
-- 采用 `@nuxt/eslint-config` 配置
-- 推荐使用扁平化配置格式 (`eslint.config.mjs`)
-- 不使用 Prettier，避免与 ESLint 格式化功能冲突
-- IDE 设置中配置保存时自动修复 ESLint 问题
+1. **资源优化**：
+   - 使用异步组件 `defineAsyncComponent`
+   - 图片懒加载
+   - 使用合适的图片格式（WebP, AVIF）
+   - CSS 和 JS 代码分割
 
-```json
-// VS Code settings.json
-{
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "never",
-    "source.fixAll.eslint": "explicit"
-  }
-}
-```
+2. **渲染优化**：
+   - 使用 `<ClientOnly>` 包装仅客户端渲染的组件
+   - 避免大型组件，拆分为更小的组件
+   - 使用 `<Suspense>` 处理异步组件
+   - 大列表使用虚拟滚动（如：vue-virtual-scroller）
 
-### 样式规范
-- 优先使用 Scoped CSS
-- 全局样式放置在 `assets/css` 目录下
-- 使用 SCSS/Sass 时确保配置 vite preprocessorOptions
-- 结合 Tailwind 与组件库样式，避免样式冲突
-- 使用 CSS 变量实现主题管理
+3. **数据获取优化**：
+   - 使用 `useAsyncData` 和 `useFetch` 的缓存功能
+   - 避免重复请求相同数据
+   - 合理设置数据刷新策略
 
-```scss
-:root {
-  --primary-color: #49240F;
-  --secondary-color: #E4A79D;
-}
-```
+## Appwrite 使用规范
 
-### 组件开发
-- 使用 Arco Design 组件时优先使用组合式API
-- 自定义组件尽量保持与 Arco Design 的设计语言一致
-- 使用 Tailwind 实现快速布局和样式调整
-- 复杂交互组件应编写单元测试
+1. **实例化 Appwrite**：
+   ```ts
+   import { Client, Account, Databases } from 'appwrite'
+   
+   export const useAppwrite = () => {
+     const config = useRuntimeConfig()
+     
+     const client = new Client()
+       .setEndpoint(config.public.appwriteEndpoint)
+       .setProject(config.public.appwriteProjectId)
+     
+     const account = new Account(client)
+     const databases = new Databases(client)
+     
+     return {
+       client,
+       account,
+       databases
+     }
+   }
+   ```
 
-```vue
-<template>
-  <a-space direction="vertical" :size="24">
-    <a-button type="primary" class="hover:opacity-90">
-      {{ $t('common.submit') }}
-    </a-button>
-    <div class="flex gap-2 items-center">
-      <a-avatar :size="40" />
-      <span class="text-lg font-medium">{{ username }}</span>
-    </div>
-  </a-space>
-</template>
-```
-
-### TypeScript
-- 尽可能使用 TypeScript 类型定义
-- 利用 Nuxt 的自动导入功能，无需手动导入组件和composables
-- 使用 `.nuxt/tsconfig.json` 自动生成的类型配置
-
-### 页面路由规则
-- 使用 `defineRouteRules` 在页面级别定义混合渲染规则
-- 使用 `definePageMeta` 定义页面元数据
-- 定义嵌套路由时遵循文件系统结构（如 `/pages/user/[id].vue`）
-
-```vue
-<script setup lang="ts">
-defineRouteRules({
-  prerender: true
-})
-
-definePageMeta({
-  layout: 'default',
-  middleware: ['auth']
-})
-</script>
-```
-
-## 性能优化
-
-### CSS 优化
-- 使用 CSS 代码分割
-- 关键 CSS 内联到 HTML 中
-- 考虑使用 `@nuxtjs/fontaine` 减少 CLS
-- 大型 CSS 文件采用异步加载
-- 使用 Tailwind JIT 编译加快构建速度，减小包体积
-
-### 图片资源
-- 使用 Nuxt Image 组件进行图片优化
-- 提供响应式图片版本
-- 使用现代图片格式（WebP, AVIF）
-
-## 渲染策略
-
-- 根据不同页面需求选择适当的渲染模式：
-  - `routeRules: { '/': { prerender: true } }` 用于SEO关键页面
-  - `routeRules: { '/api/*': { cache: { maxAge: 60 * 60 } } }` 用于API缓存
-  - 可以在 `nuxt.config.ts` 或页面组件中使用 `defineRouteRules` 定义
-
-## API请求和数据获取
-
-- 使用 `useFetch` 钩子进行数据获取（支持SSR且带有缓存）
-- 使用 `useAsyncData` 获取异步数据
-- 适当使用 `$fetch` API 进行客户端API调用
-- 合理设置 `key`、`server` 和 `lazy` 参数优化性能
-- 使用 `refresh()` 方法手动刷新数据
-
-```vue
-<script setup>
-const { data, pending, error, refresh } = await useFetch('/api/users', {
-  key: 'users',
-  lazy: false,
-  server: true,
-  transform: (data) => data.map(user => ({ ...user, fullName: `${user.firstName} ${user.lastName}` }))
-})
-</script>
-```
-
-## 状态管理
-
-- 使用 `useState` 进行跨组件状态管理
-- 对于大型应用考虑使用 Pinia 进行状态管理
-- 所有环境变量通过 `.env` 文件配置，并在 `nuxt.config.ts` 中使用 `runtimeConfig`
-- 使用 ES 模块语法，避免使用 CommonJS 语法 (`__dirname`, `require`)
-
-```vue
-<script setup>
-const counter = useState('counter', () => 0)
-</script>
-```
-
-## 导航和路由
-
-- 使用 `<NuxtLink>` 组件进行客户端路由导航
-- 使用 `navigateTo` 函数进行编程式导航
-- 利用 `useRoute` 和 `useRouter` 操作路由
-
-```vue
-<template>
-  <NuxtLink to="/about" prefetch>关于我们</NuxtLink>
-  <button @click="navigate">跳转</button>
-</template>
-
-<script setup>
-const router = useRouter()
-const route = useRoute()
-
-function navigate() {
-  navigateTo('/products/' + route.params.id)
-}
-</script>
-```
-
-## 依赖管理
-
-- 使用 Corepack 确保包管理器版本一致性
-- 在 `package.json` 中指定 `packageManager` 字段
-- 推荐使用 pnpm 作为包管理器
-
-```json
-{
-  "packageManager": "pnpm@7.5.0"
-}
-```
-
-## 文档规范
-
-- 避免使用主观词汇如 _simply_, _just_, _obviously_ 等
-- 优先使用主动语态，而非被动语态
-- 保持文档风格一致性，遵循 MarkdownLint 规则
-- 为复杂功能提供清晰的代码示例
-
-## 构建与部署
-
-- 确保 `nuxt.config.ts` 配置正确的打包选项
-- 生产环境禁用开发工具和调试功能
-- 考虑使用 CDN 分发静态资源
-- 使用 HTTP/2 或 HTTP/3 提高资源加载速度 
+2. **数据操作**：
+   - 使用 composables 封装 Appwrite 操作
+   - 使用类型定义增强类型安全
+   - 处理 Appwrite 错误并提供用户反馈
