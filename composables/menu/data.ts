@@ -1,27 +1,20 @@
-import { ref } from 'vue';
-import type { MenuItem } from '~/mock/data/menuConfig';
-import { useMswApi } from './useMswApi';
+import type { MenuItem, MenuType, MenuResponse } from './types';
+import { useApi } from '../api';
 
 // 缓存管理
-const CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 5分钟
-
-interface MenuCache {
-  data: MenuItem[];
-  timestamp: number;
-}
-
-const menuCache = new Map<string, MenuCache>();
+const CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 5分钟缓存
+const menuCache = new Map<string, { data: MenuItem[], timestamp: number }>();
 
 /**
- * 使用MSW的菜单数据获取组合式函数
+ * 菜单数据获取功能
  */
-export function useMenuWithMsw() {
+export function useMenuData() {
   const menuData = ref<MenuItem[]>([]);
   const loading = ref(false);
   const error = ref<Error | null>(null);
   
   // 获取API服务
-  const api = useMswApi();
+  const api = useApi();
   
   /**
    * 检查缓存是否有效
@@ -53,11 +46,10 @@ export function useMenuWithMsw() {
   
   /**
    * 获取菜单数据
+   * @param type 菜单类型
+   * @param useCache 是否使用缓存
    */
-  const getMenu = async (
-    type: 'admin' | 'dashboard' | 'developer',
-    useCache: boolean = true
-  ) => {
+  const fetchMenu = async (type: MenuType, useCache: boolean = true) => {
     const cacheKey = `menu_${type}`;
     
     // 如果启用缓存且缓存有效，直接使用缓存
@@ -74,16 +66,16 @@ export function useMenuWithMsw() {
     
     try {
       // 获取菜单数据
-      let result;
+      let result: MenuResponse | undefined;
       switch (type) {
         case 'admin':
-          result = await api.menu.getAdminMenu();
+          result = await api.menu.getAdminMenu() as MenuResponse;
           break;
         case 'dashboard':
-          result = await api.menu.getDashboardMenu();
+          result = await api.menu.getDashboardMenu() as MenuResponse;
           break;
         case 'developer':
-          result = await api.menu.getDeveloperMenu();
+          result = await api.menu.getDeveloperMenu() as MenuResponse;
           break;
       }
       
@@ -104,10 +96,13 @@ export function useMenuWithMsw() {
     return { menuData, loading, error };
   };
   
-  // 获取菜单的简便方法
-  const getAdminMenu = (useCache = true) => getMenu('admin', useCache);
-  const getDashboardMenu = (useCache = true) => getMenu('dashboard', useCache);
-  const getDeveloperMenu = (useCache = true) => getMenu('developer', useCache);
+  // 获取不同类型的菜单快捷方法
+  const getAdminMenu = (useCache = true) => fetchMenu('admin', useCache);
+  const getDashboardMenu = (useCache = true) => fetchMenu('dashboard', useCache);
+  const getDeveloperMenu = (useCache = true) => fetchMenu('developer', useCache);
+  
+  // 刷新菜单(强制不使用缓存)
+  const refreshMenu = (type: MenuType) => fetchMenu(type, false);
   
   return {
     menuData,
@@ -115,6 +110,7 @@ export function useMenuWithMsw() {
     error,
     getAdminMenu,
     getDashboardMenu,
-    getDeveloperMenu
+    getDeveloperMenu,
+    refreshMenu
   };
 } 

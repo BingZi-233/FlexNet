@@ -2,6 +2,7 @@ import { useBreakpoints, useStorage } from '@vueuse/core';
 
 /**
  * 响应式布局组合式函数
+ * 处理移动端和桌面端布局切换
  * @param mobileBreakpoint 移动端断点
  */
 export function useResponsiveLayout(mobileBreakpoint = 768) {

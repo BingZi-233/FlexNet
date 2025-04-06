@@ -51,10 +51,12 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
-import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
+import { useAppwrite } from '~/composables/appwrite';
+import { useMenu, useMenuData } from '~/composables/menu';
 import { UserRole } from '~/types/user';
 import DashboardLayout from '~/components/layout/DashboardLayout.vue';
+import { Message } from '@arco-design/web-vue';
+import type { MenuItem } from '~/types/layout';
 import {
   IconDashboard,
   IconUser,
@@ -74,21 +76,27 @@ import {
   IconImage
 } from '@arco-design/web-vue/es/icon';
 import { getDeveloperMenu } from '~/mock/api/menu';
-import type { MenuItem } from '~/mock/data/menuConfig';
-import { useMenu } from '~/composables/useMenu';
 import { useMenuSimple } from '~/composables/useMenuSimple';
 import { useMenuWithMsw } from '~/composables/useMenuWithMsw';
-import { useMenuData } from '~/composables/useMenuData';
 
 // 路由
 const route = useRoute();
 const router = useRouter();
 
-// 使用Appwrite账户服务
-const { getCurrentUser, logout, hasAdminPermission } = useAppwriteAccount();
+// 使用Appwrite服务
+const appwrite = useAppwrite();
+const account = appwrite.account;
 
-// 使用Appwrite头像服务
-const { getInitialsAvatar } = useAppwriteAvatar();
+// 获取头像函数
+const getInitialsAvatar = (name: string) => {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=165DFF&color=fff`;
+};
+
+// 使用hasAdminPermission函数（从account中获取）
+const hasAdminPermission = async () => {
+  const user = await account.getCurrentUser();
+  return user?.labels?.includes('admin') || false;
+};
 
 // 用于侧边菜单组件通信
 const collapsed = ref(false);
@@ -103,17 +111,17 @@ const fetchMenuData = async () => {
   try {
     menuLoading.value = true;
     
-    // 使用符合Nuxt最佳实践的菜单获取函数
-    const { menu, loading, error } = await useMenuData().getDeveloperMenu();
+    // 使用新的菜单数据API
+    const menuApi = useMenuData();
+    const result = await menuApi.getDeveloperMenu();
     
-    // 如果没有错误，使用菜单数据
-    if (!error.value) {
-      developerMenuConfig.value = menu.value;
+    if (result && result.menuData) {
+      developerMenuConfig.value = result.menuData.value;
     } else {
-      console.error('获取开发者菜单失败:', error.value);
+      console.error('获取开发者菜单失败: 无数据返回');
     }
     
-    menuLoading.value = loading.value;
+    menuLoading.value = false;
   } catch (error) {
     console.error('获取开发者菜单出错:', error);
     menuLoading.value = false;
@@ -149,7 +157,7 @@ const canAccessAdmin = ref(false);
 const fetchUserData = async () => {
   try {
     isLoading.value = true;
-    const user = await getCurrentUser();
+    const user = await account.getCurrentUser();
     
     if (user) {
       // 处理用户头像
@@ -192,7 +200,7 @@ const goTo = (path: string) => {
 // 退出登录
 const handleLogout = async () => {
   try {
-    await logout();
+    await account.logout();
     // 退出后重定向到登录页面
     router.push('/auth/login');
   } catch (error) {

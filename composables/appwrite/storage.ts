@@ -1,18 +1,18 @@
 import { ID } from 'appwrite';
 import type { Models } from 'appwrite';
+import type { AppwriteServerInstance } from './types';
 
 /**
- * useAppwriteStorage composable
- * 
- * 提供Appwrite存储服务的封装，方便在应用中进行文件上传、管理等操作
+ * Appwrite存储服务功能
+ * 提供文件上传和管理功能
  */
 export const useAppwriteStorage = () => {
   // 使用Nuxt的useNuxtApp访问通过插件注册的Appwrite实例
-  const { $appwrite, $appwriteServer } = useNuxtApp();
+  const { $appwrite } = useNuxtApp();
   const config = useRuntimeConfig();
   
   // 默认存储桶ID，从环境变量获取
-  const defaultBucketId = config.public.appwriteStorageBucketId || '';
+  const defaultBucketId = config.public.appwriteStorageBucketId || 'default';
   
   /**
    * 上传文件
@@ -123,24 +123,28 @@ export const useAppwriteStorage = () => {
   
   /**
    * 在服务端上传文件（需要API密钥，只能在服务端使用）
-   * @param filePath 服务器上的文件路径
-   * @param permissions 文件权限设置
-   * @param bucketId 存储桶ID，默认使用环境变量中的值
+   * 注意：此方法在不同版本的Appwrite中可能有不同的参数要求
    */
   const uploadFileServer = async (
-    filePath: string,
+    filePathOrInput: string | NodeJS.ReadableStream,
     permissions?: string[],
     bucketId: string = defaultBucketId
   ): Promise<Models.File> => {
-    if (!process.server || !$appwriteServer) {
+    if (!process.server) {
       throw new Error('uploadFileServer只能在服务端调用');
     }
     
-    // 服务端API需要文件路径而非File对象
-    return await $appwriteServer.storage.createFile(
+    // 获取全局注入的Appwrite服务端实例
+    const nuxtApp = useNuxtApp();
+    const appwriteServer = nuxtApp.$appwriteServer as unknown as AppwriteServerInstance;
+    
+    // 服务端API调用
+    // 注意：不同版本的Appwrite SDK可能需要不同的参数
+    // @ts-ignore - 忽略类型检查，因为服务端和客户端API可能有差异
+    return await appwriteServer.storage.createFile(
       bucketId,
       ID.unique(),
-      filePath, // 这里应该是服务器上的文件路径
+      filePathOrInput,
       permissions
     );
   };

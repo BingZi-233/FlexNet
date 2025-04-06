@@ -51,7 +51,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAppwriteAccount } from '~/composables/useAppwriteAccount';
+import { useAppwrite } from '~/composables/appwrite';
 import { useAppwriteAvatar } from '~/composables/useAppwriteAvatar';
 import { UserRole } from '~/types/user';
 import DashboardLayout from '~/components/layout/DashboardLayout.vue';
@@ -73,19 +73,16 @@ import {
   IconFile,
   IconImage
 } from '@arco-design/web-vue/es/icon';
-import { getDashboardMenu } from '~/mock/api/menu';
 import type { MenuItem } from '~/mock/data/menuConfig';
-import { useMenu } from '~/composables/useMenu';
-import { useMenuSimple } from '~/composables/useMenuSimple';
-import { useMenuWithMsw } from '~/composables/useMenuWithMsw';
-import { useMenuData } from '~/composables/useMenuData';
+import { useMenu } from '~/composables/menu';
 
 // 路由
 const route = useRoute();
 const router = useRouter();
 
-// 使用Appwrite账户服务
-const { getCurrentUser, logout, hasDevPermission, hasAdminPermission } = useAppwriteAccount();
+// 使用Appwrite服务
+const appwrite = useAppwrite();
+const { account } = appwrite;
 
 // 使用Appwrite头像服务
 const { getInitialsAvatar, getFavicon } = useAppwriteAvatar();
@@ -103,12 +100,36 @@ const fetchMenuData = async () => {
   try {
     menuLoading.value = true;
     
-    // 使用符合Nuxt最佳实践的菜单获取函数
-    const { menu, loading, error } = await useMenuData().getDashboardMenu();
+    // 使用新的菜单API
+    const menu = useMenu();
+    const { menuData, loading, error } = await menu.getDashboardMenu();
     
     // 如果没有错误，使用菜单数据
-    if (!error.value) {
-      dashboardMenuConfig.value = menu.value;
+    if (!error.value && menuData.value) {
+      // 转换菜单数据格式确保与MenuItem类型兼容
+      const transformedMenu: MenuItem[] = [];
+      
+      for (const item of menuData.value) {
+        const menuItem: MenuItem = {
+          key: item.key,
+          title: item.title,
+          icon: item.icon || IconDashboard, // 提供默认图标
+          route: item.route
+        };
+        
+        if (item.children && item.children.length > 0) {
+          menuItem.children = item.children.map(child => ({
+            key: child.key,
+            title: child.title,
+            icon: child.icon || IconDashboard,
+            route: child.route
+          }));
+        }
+        
+        transformedMenu.push(menuItem);
+      }
+      
+      dashboardMenuConfig.value = transformedMenu;
     } else {
       console.error('获取用户仪表盘菜单失败:', error.value);
     }
@@ -156,7 +177,7 @@ const goTo = (path: string) => {
 const fetchUserData = async () => {
   try {
     isLoading.value = true;
-    const user = await getCurrentUser();
+    const user = await account.getCurrentUser();
     
     if (user) {
       // 处理用户头像
@@ -166,8 +187,8 @@ const fetchUserData = async () => {
       const labels = user.labels || [];
       
       // 检查用户角色权限
-      canAccessDeveloper.value = await hasDevPermission();
-      canAccessAdmin.value = await hasAdminPermission();
+      canAccessDeveloper.value = user.labels?.includes(UserRole.DEVELOPER) || false;
+      canAccessAdmin.value = user.labels?.includes(UserRole.ADMIN) || false;
       
       // 设置用户数据对象
       userData.value = {
@@ -192,7 +213,7 @@ const fetchUserData = async () => {
 // 退出登录
 const handleLogout = async () => {
   try {
-    await logout();
+    await account.logout();
     // 退出后重定向到登录页面
     router.push('/auth/login');
   } catch (error) {

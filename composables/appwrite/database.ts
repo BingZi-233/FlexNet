@@ -2,11 +2,10 @@ import { ID, Query, Permission, Role } from 'appwrite';
 import type { Models } from 'appwrite';
 
 /**
- * useAppwriteDatabases composable
- * 
- * 提供Appwrite数据库服务的封装，方便在应用中进行数据的增删改查操作
+ * Appwrite 数据库服务
+ * 提供数据的增删改查操作，支持客户端和服务端操作
  */
-export const useAppwriteDatabases = () => {
+export const useAppwriteDatabase = () => {
   // 使用Nuxt的useNuxtApp访问通过插件注册的Appwrite实例
   const { $appwrite, $appwriteServer } = useNuxtApp();
   const config = useRuntimeConfig();
@@ -23,7 +22,7 @@ export const useAppwriteDatabases = () => {
    */
   const createDocument = async <T = any>(
     collectionId: string,
-    data: object,
+    data: any,
     permissions?: string[],
     databaseId: string = defaultDatabaseId
   ): Promise<Models.Document & T> => {
@@ -83,7 +82,7 @@ export const useAppwriteDatabases = () => {
   const updateDocument = async <T = any>(
     collectionId: string,
     documentId: string,
-    data: object,
+    data: any,
     permissions?: string[],
     databaseId: string = defaultDatabaseId
   ): Promise<Models.Document & T> => {
@@ -115,43 +114,28 @@ export const useAppwriteDatabases = () => {
   };
   
   /**
-   * 创建查询的辅助方法
+   * 创建Query查询条件
    */
   const createQuery = {
-    // 等于
     equal: (attribute: string, value: any) => Query.equal(attribute, value),
-    // 不等于
     notEqual: (attribute: string, value: any) => Query.notEqual(attribute, value),
-    // 小于
     lessThan: (attribute: string, value: any) => Query.lessThan(attribute, value),
-    // 小于等于
     lessThanEqual: (attribute: string, value: any) => Query.lessThanEqual(attribute, value),
-    // 大于
     greaterThan: (attribute: string, value: any) => Query.greaterThan(attribute, value),
-    // 大于等于
     greaterThanEqual: (attribute: string, value: any) => Query.greaterThanEqual(attribute, value),
-    // 在数组中
-    isIn: (attribute: string, value: any[]) => Query.isIn(attribute, value),
-    // 不在数组中
-    isNotIn: (attribute: string, value: any[]) => Query.isNotIn(attribute, value),
-    // 包含数组
-    contains: (attribute: string, value: any[]) => Query.contains(attribute, value),
-    // 开始于
+    search: (attribute: string, value: string) => Query.search(attribute, value),
+    isNull: (attribute: string) => Query.isNull(attribute),
+    isNotNull: (attribute: string) => Query.isNotNull(attribute),
+    between: (attribute: string, start: any, end: any) => Query.between(attribute, start, end),
     startsWith: (attribute: string, value: string) => Query.startsWith(attribute, value),
-    // 结束于
     endsWith: (attribute: string, value: string) => Query.endsWith(attribute, value),
-    // 限制结果数量
+    select: (attributes: string[]) => Query.select(attributes),
     limit: (limit: number) => Query.limit(limit),
-    // 跳过指定数量的结果
     offset: (offset: number) => Query.offset(offset),
-    // 结果排序
     orderAsc: (attribute: string) => Query.orderAsc(attribute),
     orderDesc: (attribute: string) => Query.orderDesc(attribute),
-    // 游标分页
     cursorAfter: (documentId: string) => Query.cursorAfter(documentId),
-    cursorBefore: (documentId: string) => Query.cursorBefore(documentId),
-    // 搜索
-    search: (attribute: string, value: string) => Query.search(attribute, value)
+    cursorBefore: (documentId: string) => Query.cursorBefore(documentId)
   };
   
   /**
@@ -183,7 +167,7 @@ export const useAppwriteDatabases = () => {
    */
   const createDocumentServer = async <T = any>(
     collectionId: string,
-    data: object,
+    data: any,
     permissions?: string[],
     databaseId: string = defaultDatabaseId
   ): Promise<Models.Document & T> => {
@@ -211,7 +195,7 @@ export const useAppwriteDatabases = () => {
   const updateDocumentServer = async <T = any>(
     collectionId: string,
     documentId: string,
-    data: object,
+    data: any,
     permissions?: string[],
     databaseId: string = defaultDatabaseId
   ): Promise<Models.Document & T> => {
@@ -228,15 +212,80 @@ export const useAppwriteDatabases = () => {
     );
   };
   
+  /**
+   * 在服务端上获取文档（需要API密钥，只能在服务端使用）
+   */
+  const getDocumentServer = async <T = any>(
+    collectionId: string,
+    documentId: string,
+    databaseId: string = defaultDatabaseId
+  ): Promise<Models.Document & T> => {
+    if (!process.server || !$appwriteServer) {
+      throw new Error('getDocumentServer只能在服务端调用');
+    }
+    
+    return await $appwriteServer.databases.getDocument(
+      databaseId,
+      collectionId,
+      documentId
+    );
+  };
+  
+  /**
+   * 在服务端上列出文档（需要API密钥，只能在服务端使用）
+   */
+  const listDocumentsServer = async <T = any>(
+    collectionId: string,
+    queries?: string[],
+    databaseId: string = defaultDatabaseId
+  ): Promise<Models.DocumentList<Models.Document & T>> => {
+    if (!process.server || !$appwriteServer) {
+      throw new Error('listDocumentsServer只能在服务端调用');
+    }
+    
+    return await $appwriteServer.databases.listDocuments(
+      databaseId,
+      collectionId,
+      queries
+    );
+  };
+  
+  /**
+   * 在服务端上删除文档（需要API密钥，只能在服务端使用）
+   */
+  const deleteDocumentServer = async (
+    collectionId: string,
+    documentId: string,
+    databaseId: string = defaultDatabaseId
+  ): Promise<void> => {
+    if (!process.server || !$appwriteServer) {
+      throw new Error('deleteDocumentServer只能在服务端调用');
+    }
+    
+    await $appwriteServer.databases.deleteDocument(
+      databaseId,
+      collectionId,
+      documentId
+    );
+  };
+  
   return {
+    // 客户端操作
     createDocument,
     getDocument,
     listDocuments,
     updateDocument,
     deleteDocument,
+    
+    // 查询工具
     createQuery,
     getPermissions,
+    
+    // 服务端操作
     createDocumentServer,
-    updateDocumentServer
+    getDocumentServer,
+    listDocumentsServer,
+    updateDocumentServer,
+    deleteDocumentServer
   };
 }; 
